@@ -28,24 +28,11 @@ sys.path.insert(0, str(Path(BASE_DIR) / 'src'))
 import config
 from data_utils import *
 
-# =============================================================================
-# Set up logging
-# =============================================================================
-LOG_PATH = Path(config.LOG_DIR) / "nasdaq_data_link.log"
-logging.basicConfig(
-    filename=LOG_PATH,
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
 
 # =============================================================================
 # Global Configuration
 # =============================================================================
 ndl.ApiConfig.api_key = config.NASDAQ_API_KEY
-
-RAW_DATA_DIR = Path(config.RAW_DATA_DIR)
-RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # =============================================================================
 # Public API Functions (with caching)
