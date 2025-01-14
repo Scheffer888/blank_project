@@ -24,6 +24,7 @@ linkify-it-py
 matplotlib==3.9.2
 myst-nb
 myst-parser==2.0.0
+Nasdaq-Data-Link==1.0.4
 notebook
 numpy==1.26.4
 numpydoc==1.8.0

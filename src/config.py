@@ -68,15 +68,19 @@ def if_relative_make_abs(path):
 # fmt: off
 ## Other .env variables
 WRDS_USERNAME = config("WRDS_USERNAME", default="")
+NASDAQ_API_KEY = config("NASDAQ_API_KEY", default="")
 START_DATE = config("START_DATE", default="1913-01-01", cast=to_datetime)
-END_DATE = config("END_DATE", default="2023-10-01", cast=to_datetime)
+END_DATE = config("END_DATE", default="2024-12-31", cast=to_datetime)
 USER = config("USER", default="")
 PIPELINE_DEV_MODE = config("PIPELINE_DEV_MODE", default=True, cast=bool)
 PIPELINE_THEME = config("PIPELINE_THEME", default="pipeline")
 
 ## Paths
 DATA_DIR = if_relative_make_abs(config('DATA_DIR', default=Path('_data'), cast=Path))
+RAW_DATA_DIR = Path(DATA_DIR / "raw")
+PROCESSED_DATA_DIR = Path(DATA_DIR / "processed")
 MANUAL_DATA_DIR = if_relative_make_abs(config('MANUAL_DATA_DIR', default=Path('data_manual'), cast=Path))
+LOG_DIR = if_relative_make_abs(config('LOG_DIR', default=Path('logs'), cast=Path))
 OUTPUT_DIR = if_relative_make_abs(config('OUTPUT_DIR', default=Path('_output'), cast=Path))
 PUBLISH_DIR = if_relative_make_abs(config('PUBLISH_DIR', default=Path('_output/publish'), cast=Path))
 # fmt: on
@@ -94,13 +98,10 @@ else:
 if __name__ == "__main__":
 
     ## If they don't exist, create the _data and _output directories
-    (DATA_DIR).mkdir(parents=True, exist_ok=True)
-    (DATA_DIR / "intermediate").mkdir(parents=True, exist_ok=True)
-    (DATA_DIR / "scratch").mkdir(parents=True, exist_ok=True)
-
-    # Sometimes, I'll create other folders to organize the data
-    # (DATA_DIR / 'intermediate').mkdir(parents=True, exist_ok=True)
-    # (DATA_DIR / 'derived').mkdir(parents=True, exist_ok=True)
-
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    MANUAL_DATA_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    (BASE_DIR / "_docs").mkdir(parents=True, exist_ok=True)
+    PUBLISH_DIR.mkdir(parents=True, exist_ok=True)
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
