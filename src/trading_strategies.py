@@ -15,22 +15,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 
-BASE_DIR = Path(__file__).absolute().parent.parent.parent
-sys.path.insert(0, str(Path(BASE_DIR) / 'src'))
+# BASE_DIR = Path(__file__).absolute().parent.parent.parent
+# sys.path.insert(0, str(Path(BASE_DIR) / 'src'))
 
 # Local imports
-import config
+# import config
 from data_utils import *
 
 # =============================================================================
 # Global Configuration
 # =============================================================================
 
-OUTPUT_DIR = Path(config.OUTPUT_DIR)
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
 PLOT_WIDTH, PLOT_HEIGHT = 12, 8
-
 
 # =============================================================================
 # Trading Strategies
@@ -61,7 +57,7 @@ def signal_to_returns(
     down_weight (float, default=1.0): Weight to apply to sell signals.
     plot_signals (bool, default=False): If True, plot the trading signals.
     plot_returns (bool, default=False): If True, plot the cumulative returns of the strategy.
-    save_plot (bool, default=False): If True, saves the plot as a PNG in the OUTPUT_DIR.
+    save_plot (bool, default=False): If True, saves the plot.
     plot_name (str, optional): Custom filename prefix. If None, defaults to 'cumulative_returns'.
 
     Returns:
@@ -287,7 +283,7 @@ def plot_roc_strategy(
     strategy_returns (pd.DataFrame): Returns of the strategy.
     benchmark_returns (pd.DataFrame, optional): Benchmark returns for comparison. Default is None.
     asset_name (str): Name of the asset being plotted. Default is 'Asset'.
-    save_plot (bool, default=False): If True, saves the plot as a PNG in the OUTPUT_DIR.
+    save_plot (bool, default=False): If True, saves the plot.
     plot_name (str, optional): Custom filename prefix. If None, defaults to 'cumulative_returns'.
 
     Returns:
@@ -536,7 +532,7 @@ def plot_sma_strategy(prices: pd.DataFrame,
     asset_name (str): Name of the asset being plotted. Default is 'Asset'.
     short_window (int): Window for the short moving average. Default is 50.
     long_window (int): Window for the long moving average. Default is 200.
-    save_plot (bool, default=False): If True, saves the plot as a PNG in the OUTPUT_DIR.
+    save_plot (bool, default=False): If True, saves the plot.
     plot_name (str, optional): Custom filename prefix. If None, defaults to 'cumulative_returns'.
 
     Returns:
@@ -793,7 +789,7 @@ def plot_boll_bands_strategy(prices: pd.DataFrame,
     asset_name (str): Name of the asset being plotted. Default is 'Asset'.
     ma_window (int): Window for the moving average. Default is 20.
     n_std_dev (int): Number of standard deviations for the bands. Default is 2.
-    save_plot (bool, default=False): If True, saves the plot as a PNG in the OUTPUT_DIR.
+    save_plot (bool, default=False): If True, saves the plot.
     plot_name (str, optional): Custom filename prefix. If None, defaults to 'cumulative_returns'.
 
     Returns:
@@ -1089,7 +1085,7 @@ def plot_ema_strategy(prices: pd.DataFrame,
     asset_name (str): Name of the asset being plotted. Default is 'Asset'.
     short_window (int): Window for the short EMA. Default is 12.
     long_window (int): Window for the long EMA. Default is 26.
-    save_plot (bool, default=False): If True, saves the plot as a PNG in the OUTPUT_DIR.
+    save_plot (bool, default=False): If True, saves the plot.
     plot_name (str, optional): Custom filename prefix. If None, defaults to 'cumulative_returns'.
 
     Returns:
@@ -1345,7 +1341,7 @@ def plot_macd_strategy(prices: pd.DataFrame,
     short_window (int): Window for the short EMA. Default is 12.
     long_window (int): Window for the long EMA. Default is 26.
     signal_window (int): Window for the Indicator Line EMA. Default is 9.
-    save_plot (bool, default=False): If True, saves the plot as a PNG in the OUTPUT_DIR.
+    save_plot (bool, default=False): If True, saves the plot.
     plot_name (str, optional): Custom filename prefix. If None, defaults to 'cumulative_returns'.
 
     Returns:
@@ -1617,7 +1613,7 @@ def plot_rsi_strategy(prices: pd.DataFrame,
     rsi_period (int): Period for calculating RSI. Default is 14.
     overbought (int): RSI threshold for overbought condition. Default is 70.
     oversold (int): RSI threshold for oversold condition. Default is 30.
-    save_plot (bool, default=False): If True, saves the plot as a PNG in the OUTPUT_DIR.
+    save_plot (bool, default=False): If True, saves the plot.
     plot_name (str, optional): Custom filename prefix. If None, defaults to 'cumulative_returns'.
 
     Returns:
@@ -1891,7 +1887,7 @@ def plot_mfi_strategy(prices: pd.DataFrame,
     mfi_period (int): Period for calculating MFI. Default is 14.
     overbought (int): MFI threshold for overbought condition. Default is 80.
     oversold (int): MFI threshold for oversold condition. Default is 20.
-    save_plot (bool, default=False): If True, saves the plot as a PNG in the OUTPUT_DIR.
+    save_plot (bool, default=False): If True, saves the plot.
     plot_name (str, optional): Custom filename prefix. If None, defaults to 'cumulative_returns'.
 
     Returns:

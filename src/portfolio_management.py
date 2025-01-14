@@ -18,11 +18,11 @@ from scipy.optimize import minimize
 from scipy.stats import kurtosis, norm, skew
 import statsmodels.api as sm
 
-BASE_DIR = Path(__file__).absolute().parent.parent.parent
-sys.path.insert(0, str(Path(BASE_DIR) / 'src'))
+# BASE_DIR = Path(__file__).absolute().parent.parent.parent
+# sys.path.insert(0, str(Path(BASE_DIR) / 'src'))
 
 # Local imports
-import config
+# import config
 from data_utils import *
 
 # =============================================================================
