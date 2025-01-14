@@ -1,13 +1,13 @@
-
-from typing import Optional, Dict, Any, List, Union
-import logging
 import datetime
+import logging
 import re
-import pandas as pd
-import zipfile
-
 import sys
+import zipfile
+import matplotlib.pyplot as plt
 from pathlib import Path
+from typing import Any, Dict, List, Optional, Union
+
+import pandas as pd
 
 BASE_DIR = Path(__file__).absolute().parent.parent.parent
 sys.path.insert(0, str(Path(BASE_DIR) / 'src'))
@@ -15,15 +15,37 @@ sys.path.insert(0, str(Path(BASE_DIR) / 'src'))
 # Local imports
 import config
 
+
 # =============================================================================
 # Global Configuration
 # =============================================================================
 RAW_DATA_DIR = Path(config.RAW_DATA_DIR)
 RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR = Path(config.PROCESSED_DATA_DIR)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
 
 # =============================================================================
 # Helper Functions (Caching, Reading/Writing Files)
 # =============================================================================
+
+def save_figure(
+        fig: plt.Figure,
+        plot_name_prefix: str,
+) -> None:
+    """
+    Saves a matplotlib figure to a PNG file if save_plot is True.
+    The filename pattern is "<prefix>_YYYYMMDD_HHMMSS.png".
+
+    Parameters:
+    fig (plt.Figure): The matplotlib figure to save.
+    plot_name_prefix (str): The prefix for the plot filename.
+    """
+    filename  = f"{plot_name_prefix}_{datetime.datetime.now().strftime("%Y%m%d_%H%M%S")}.png"
+    plot_path = OUTPUT_DIR / filename
+    fig.savefig(plot_path, dpi=300, bbox_inches='tight')
+    logging.info(f"Plot saved to {plot_path}")
+
 
 def cache_filename(
     code: str,
