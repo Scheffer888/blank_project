@@ -8,6 +8,8 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import pandas as pd
+from pandas.tseries.holiday import USFederalHolidayCalendar
+from pandas.tseries.offsets import CustomBusinessDay
 
 BASE_DIR = Path(__file__).absolute().parent.parent.parent
 sys.path.insert(0, str(Path(BASE_DIR) / 'src'))
@@ -256,7 +258,93 @@ def read_csv_default(csv_name: str,
 
 
 # =============================================================================
-# Helper Functions (Manipulating DataFrames)
+# Business Day Utilities
+# =============================================================================
+
+
+def bday(input_date: Union[str, datetime.date, datetime.datetime]) -> bool:
+    """
+    Checks if a given date is a U.S. business day.
+
+    Parameters:
+    input_date (str or datetime.date or datetime.datetime): Date to check. If a string, should be in 'YYYY-MM-DD' format.
+
+    Returns:
+    bool: True if it is a business day, False otherwise.
+    """
+    us_bd = CustomBusinessDay(calendar=USFederalHolidayCalendar())
+
+    if isinstance(input_date, str):
+        try:
+            input_date = dt.strptime(input_date, '%Y-%m-%d')
+        except ValueError as e:
+            raise ValueError(f'Invalid date string: {input_date}. Must be "YYYY-MM-DD".') from e
+
+    # Generate a business day range from input_date to input_date
+    return bool(len(pd.bdate_range(input_date, input_date, freq=us_bd)))
+
+
+def prev_bday(
+    input_date: Union[str, datetime.date, datetime.datetime],
+    force_prev: bool = False
+) -> Union[str, datetime.date, datetime.datetime]:
+    """
+    Finds the previous U.S. business day from the given date.
+
+    Parameters:
+    input_date (str or datetime.date or datetime.datetime): Date from which to find the previous business day. If a string, should be in 'YYYY-MM-DD' format.
+    force_prev (bool, default=False): If True, forces the function to move at least one business day back, even if 'input_date' is already a business day.
+
+    Returns:
+    (str or datetime.date or datetime.datetime): The previous business day in the same format the input was provided.
+    """
+    date_str = False
+    if isinstance(input_date, str):
+        date_str = True
+        try:
+            input_date = dt.strptime(input_date, '%Y-%m-%d')
+        except ValueError as e:
+            raise ValueError(f'Invalid date string: {input_date}. Must be "YYYY-MM-DD".') from e
+
+    if force_prev:
+        input_date -= timedelta(days=1)
+
+    while not bday(input_date):
+        input_date -= timedelta(days=1)
+
+    if date_str:
+        return input_date.strftime('%Y-%m-%d')
+    return input_date
+
+
+def next_business_day(input_date: Union[str, datetime.date, datetime.datetime]) -> datetime.date:
+    """
+    Finds the next U.S. business day after the given date, including the possibility that 'input_date' is itself not a business day.
+
+    Parameters:
+    input_date (str or datetime.date or datetime.datetime): Date from which to find the next business day. If a string, should be in 'YYYY-MM-DD' format.
+
+    Returns:
+    datetime.date: The next business day (as a date).
+    """
+    if isinstance(input_date, str):
+        try:
+            input_date = dt.strptime(input_date, "%Y-%m-%d")
+        except ValueError as e:
+            raise ValueError(f'Invalid date string: {input_date}. Must be "YYYY-MM-DD".') from e
+
+    one_day = timedelta(days=1)
+    us_holidays = holidays.US()
+
+    next_day = input_date
+    while (next_day.weekday() in holidays.WEEKEND) or (next_day in us_holidays):
+        next_day += one_day
+
+    return next_day.date()
+
+
+# =============================================================================
+# Manipulating DataFrames Utilities
 # =============================================================================
 
 def time_series_to_df(returns: Union[pd.DataFrame, pd.Series, List[pd.Series]], name: str = "Returns"):
