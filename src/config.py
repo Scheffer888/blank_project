@@ -21,6 +21,8 @@ over to the other configuration, for example.
 from decouple import config
 from pathlib import Path
 from pandas import to_datetime
+import pandas as pd
+#import matplotlib.pyplot as plt
 
 ## Helper for determining OS
 from platform import system
@@ -69,8 +71,8 @@ def if_relative_make_abs(path):
 ## Other .env variables
 WRDS_USERNAME = config("WRDS_USERNAME", default="")
 NASDAQ_API_KEY = config("NASDAQ_API_KEY", default="")
-START_DATE = config("START_DATE", default="1913-01-01", cast=to_datetime)
-END_DATE = config("END_DATE", default="2024-12-31", cast=to_datetime)
+START_DATE = config("START_DATE", default="1913-01-01", cast=pd.to_datetime)
+END_DATE = config("END_DATE", default="2024-12-31", cast=pd.to_datetime)
 USER = config("USER", default="")
 PIPELINE_DEV_MODE = config("PIPELINE_DEV_MODE", default=True, cast=bool)
 PIPELINE_THEME = config("PIPELINE_THEME", default="pipeline")
@@ -93,6 +95,16 @@ elif OS_TYPE == "nix":
     STATA_EXE = config("STATA_EXE", default="stata-mp")
 else:
     raise ValueError("Unknown OS type")
+
+
+# Pandas display settings
+pd.options.display.max_columns = 30
+pd.options.display.max_rows = 500
+pd.options.display.max_colwidth = 100
+pd.set_option('display.float_format', lambda x: '%.4f' % x)
+
+# Matplotlib settings
+#plt.rcParams['figure.figsize'] = (12, 8)
 
 
 if __name__ == "__main__":
