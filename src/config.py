@@ -18,47 +18,16 @@ over to the other configuration, for example.
 
 """
 
-from decouple import config
+from decouple import config as env_config
 from pathlib import Path
 from pandas import to_datetime
-import pandas as pd
-#import matplotlib.pyplot as plt
+from scheffer_quant import config as sq_config
 
-## Helper for determining OS
-from platform import system
-
-
-def get_os():
-    os_name = system()
-    if os_name == "Windows":
-        return "windows"
-    elif os_name == "Darwin":
-        return "nix"
-    elif os_name == "Linux":
-        return "nix"
-    else:
-        return "unknown"
-
-
-OS_TYPE = get_os()
 
 # Absolute path to root directory of the project
 BASE_DIR = Path(__file__).absolute().parent.parent
 
 def if_relative_make_abs(path):
-    """If a relative path is given, make it absolute, assuming
-    that it is relative to the project root directory (BASE_DIR)
-
-    Example
-    -------
-    ```
-    >>> if_relative_make_abs(Path('_data'))
-    WindowsPath('C:/Users/jdoe/GitRepositories/blank_project/_data')
-    
-    >>> if_relative_make_abs(Path("C:/Users/jdoe/GitRepositories/blank_project/_output"))
-    WindowsPath('C:/Users/jdoe/GitRepositories/blank_project/_output')
-    ```
-    """
     path = Path(path)
     if path.is_absolute():
         abs_path = path.resolve()
@@ -69,43 +38,39 @@ def if_relative_make_abs(path):
 
 # fmt: off
 ## Other .env variables
-WRDS_USERNAME = config("WRDS_USERNAME", default="")
-NASDAQ_API_KEY = config("NASDAQ_API_KEY", default="")
-START_DATE = config("START_DATE", default="1913-01-01", cast=pd.to_datetime)
-END_DATE = config("END_DATE", default="2024-12-31", cast=pd.to_datetime)
-USER = config("USER", default="")
-PIPELINE_DEV_MODE = config("PIPELINE_DEV_MODE", default=True, cast=bool)
-PIPELINE_THEME = config("PIPELINE_THEME", default="pipeline")
+WRDS_USERNAME = env_config("WRDS_USERNAME", default="")
+NASDAQ_API_KEY = env_config("NASDAQ_API_KEY", default="")
+START_DATE = env_config("START_DATE", default="1913-01-01", cast=to_datetime)
+END_DATE = env_config("END_DATE", default="2024-12-31", cast=to_datetime)
+USER = env_config("USER", default="")
+PIPELINE_DEV_MODE = env_config("PIPELINE_DEV_MODE", default=True, cast=bool)
+PIPELINE_THEME = env_config("PIPELINE_THEME", default="pipeline")
 
 ## Paths
-DATA_DIR = if_relative_make_abs(config('DATA_DIR', default=Path('_data'), cast=Path))
+DATA_DIR = if_relative_make_abs(env_config('DATA_DIR', default=Path('_data'), cast=Path))
 RAW_DATA_DIR = Path(DATA_DIR / "raw")
 PROCESSED_DATA_DIR = Path(DATA_DIR / "processed")
-MANUAL_DATA_DIR = if_relative_make_abs(config('MANUAL_DATA_DIR', default=Path('data_manual'), cast=Path))
-LOG_DIR = if_relative_make_abs(config('LOG_DIR', default=Path('logs'), cast=Path))
-OUTPUT_DIR = if_relative_make_abs(config('OUTPUT_DIR', default=Path('_output'), cast=Path))
-PUBLISH_DIR = if_relative_make_abs(config('PUBLISH_DIR', default=Path('_output/publish'), cast=Path))
-# fmt: on
+MANUAL_DATA_DIR = if_relative_make_abs(env_config('MANUAL_DATA_DIR', default=Path('data_manual'), cast=Path))
+LOG_DIR = if_relative_make_abs(env_config('LOG_DIR', default=Path('logs'), cast=Path))
+OUTPUT_DIR = if_relative_make_abs(env_config('OUTPUT_DIR', default=Path('_output'), cast=Path))
+PUBLISH_DIR = if_relative_make_abs(env_config('PUBLISH_DIR', default=Path('_output/publish'), cast=Path))
 
+# Plot settings
+PLOT_WIDTH = 12
+PLOT_HEIGHT = 8
 
-## Name of Stata Executable in path
-if OS_TYPE == "windows":
-    STATA_EXE = config("STATA_EXE", default="StataMP-64.exe")
-elif OS_TYPE == "nix":
-    STATA_EXE = config("STATA_EXE", default="stata-mp")
-else:
-    raise ValueError("Unknown OS type")
-
-
-# Pandas display settings
-pd.options.display.max_columns = 30
-pd.options.display.max_rows = 500
-pd.options.display.max_colwidth = 100
-pd.set_option('display.float_format', lambda x: '%.4f' % x)
-
-# Matplotlib settings
-#plt.rcParams['figure.figsize'] = (12, 8)
-
+sq_config.Config.update(
+    BASE_DIR=BASE_DIR,
+    DATA_DIR=DATA_DIR,
+    MANUAL_DATA_DIR=MANUAL_DATA_DIR,
+    LOG_DIR=LOG_DIR,
+    OUTPUT_DIR=OUTPUT_DIR,
+    PUBLISH_DIR=PUBLISH_DIR,
+    WRDS_USERNAME=WRDS_USERNAME,
+    NASDAQ_API_KEY=NASDAQ_API_KEY,
+    START_DATE=START_DATE,
+    END_DATE=END_DATE
+)
 
 if __name__ == "__main__":
 

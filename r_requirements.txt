@@ -62,6 +62,7 @@ RPresto
 sampleSelection
 sandwich
 sem
+scheffer_quant @ file:///G:/My%20Drive/10-%20GitHub/Quant_Finance/scheffer-quant
 sm
 stargazer
 survival
