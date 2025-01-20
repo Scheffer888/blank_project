@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
+import holidays
 import pandas as pd
 from pandas.tseries.holiday import USFederalHolidayCalendar
 from pandas.tseries.offsets import CustomBusinessDay
@@ -191,7 +192,7 @@ def read_excel_default(excel_name: str,
                 return
     sheet_name = 0 if sheet_name is None else sheet_name
     df = pd.read_excel(excel_name, index_col=index_col, parse_dates=parse_dates,  sheet_name=sheet_name, **kwargs)
-    df.columns = [col.lower() for col in df.columns]
+    df.columns = [str(col).lower() for col in df.columns]
     if df.index.name is not None:
         if df.index.name in ['date', 'dates', 'datetime']:
             df.index.name = 'date'
@@ -227,7 +228,7 @@ def read_csv_default(csv_name: str,
     """
 
     df = pd.read_csv(csv_name, index_col=index_col, parse_dates=parse_dates, **kwargs)
-    df.columns = [col.lower() for col in df.columns]
+    df.columns = [str(col).lower() for col in df.columns]
 
     # Filter columns if keep_cols is specified
     if keep_cols is not None:

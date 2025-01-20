@@ -3,7 +3,7 @@ import math
 import re
 import sys
 from pathlib import Path
-from typing import Callable, List, Union, model
+from typing import Callable, List, Union
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -25,15 +25,15 @@ import statsmodels.api as sm
 # import config
 from data_utils import *
 
-# =============================================================================
+# ===============================================================================================
 # Global Configuration
-# =============================================================================
+# ===============================================================================================
 
 PLOT_WIDTH, PLOT_HEIGHT = 12, 8
 
-# =============================================================================
-# Portfolio Management Functions
-# =============================================================================
+# ===============================================================================================
+# Plotting Functions
+# ===============================================================================================
 
 def plot_cumulative_returns(
     cumulative_returns: Union[pd.DataFrame, pd.Series],
@@ -101,6 +101,9 @@ def plot_cumulative_returns(
         save_figure(fig, plot_name_prefix)
 
 
+# ===============================================================================================
+# Return Calculations
+# ===============================================================================================
 
 def calc_cumulative_returns(
     returns: Union[pd.DataFrame, pd.Series, List[pd.Series]],
@@ -159,6 +162,58 @@ def calc_cumulative_returns(
     if return_series:
         return cumulative_returns
     
+
+def calc_const_port_returns(
+    returns: Union[pd.DataFrame, List[pd.Series]],
+    weights: Union[dict, list, pd.Series, pd.DataFrame],
+    port_name: Union[None, str] = None
+) -> pd.DataFrame:
+    """
+    Creates a portfolio by applying the specified constant weights to the asset returns.
+
+    Parameters:
+    returns (pd.DataFrame or List of pd.Series): Time series of asset returns.
+    weights (list or pd.Series): Weights to apply to the returns. If a list or pd.Series is provided, it will be converted into a dict.
+    port_name (str or None, default=None): Name for the portfolio. If None, a name will be generated based on asset weights.
+
+    Returns:
+    pd.DataFrame: The portfolio returns based on the provided weights.
+    """
+
+    returns = time_series_to_df(returns) # Convert returns to DataFrame if it is a Series or a list of Series
+    fix_dates_index(returns) # Fix the date index of the DataFrame if it is not in datetime format and convert returns to float
+    
+    if isinstance(weights, list):
+        print("Weights are a list. Converting to dict assuming same order as columns in returns")
+        weights = dict(zip(returns.columns, weights))
+    elif isinstance(weights, pd.Series):
+        weights = weights.to_dict()
+    elif isinstance(weights, pd.DataFrame):
+        weights = list(weights.to_dict().values())[0]
+    elif isinstance(weights, dict):
+        pass
+    else:
+        raise Exception("Weights must be a dict, list, pd.Series, or pd.DataFrame")
+    
+    # Check returns size and weight size:
+    if returns.shape[1] != len(weights):
+        raise Exception(f"Returns have {returns.shape[1]} assets, but {len(weights)} weights were provided")
+
+    # Ensure columns match weights keys
+    returns = returns[list(weights.keys())]
+    port_returns = pd.DataFrame(returns @ list(weights.values()))
+
+    if port_name is None:
+        print("Portfolio: "+" + ".join([f"{n} ({w:.2%})" for n, w in weights.items()]))
+        port_name = 'Portfolio'
+    port_returns.columns = [port_name]
+
+    return port_returns
+
+
+# ===============================================================================================
+# Statistics and Analysis
+# ===============================================================================================
 
 def calc_returns_statistics(
     returns: Union[pd.DataFrame, pd.Series, List[pd.Series]],
@@ -587,6 +642,9 @@ def calc_correlations(
         return None
     
 
+# ===============================================================================================
+# Volatility Functions
+# ===============================================================================================
 
 def calc_ewma_volatility(
         returns: pd.Series,
@@ -922,6 +980,9 @@ def plot_var(
         save_figure(fig, plot_name_prefix)
 
 
+# ===============================================================================================
+# Portfolio Optimization Functions
+# ===============================================================================================
 
 def calc_tangency_port(
     returns: Union[pd.DataFrame, List[pd.Series]],
@@ -1336,53 +1397,9 @@ def calc_mv_port(
         return mv_weights
 
 
-def calc_const_port_returns(
-    returns: Union[pd.DataFrame, List[pd.Series]],
-    weights: Union[dict, list, pd.Series, pd.DataFrame],
-    port_name: Union[None, str] = None
-) -> pd.DataFrame:
-    """
-    Creates a portfolio by applying the specified constant weights to the asset returns.
-
-    Parameters:
-    returns (pd.DataFrame or List of pd.Series): Time series of asset returns.
-    weights (list or pd.Series): Weights to apply to the returns. If a list or pd.Series is provided, it will be converted into a dict.
-    port_name (str or None, default=None): Name for the portfolio. If None, a name will be generated based on asset weights.
-
-    Returns:
-    pd.DataFrame: The portfolio returns based on the provided weights.
-    """
-
-    returns = time_series_to_df(returns) # Convert returns to DataFrame if it is a Series or a list of Series
-    fix_dates_index(returns) # Fix the date index of the DataFrame if it is not in datetime format and convert returns to float
-    
-    if isinstance(weights, list):
-        print("Weights are a list. Converting to dict assuming same order as columns in returns")
-        weights = dict(zip(returns.columns, weights))
-    elif isinstance(weights, pd.Series):
-        weights = weights.to_dict()
-    elif isinstance(weights, pd.DataFrame):
-        weights = list(weights.to_dict().values())[0]
-    elif isinstance(weights, dict):
-        pass
-    else:
-        raise Exception("Weights must be a dict, list, pd.Series, or pd.DataFrame")
-    
-    # Check returns size and weight size:
-    if returns.shape[1] != len(weights):
-        raise Exception(f"Returns have {returns.shape[1]} assets, but {len(weights)} weights were provided")
-
-    # Ensure columns match weights keys
-    returns = returns[list(weights.keys())]
-    port_returns = pd.DataFrame(returns @ list(weights.values()))
-
-    if port_name is None:
-        print("Portfolio: "+" + ".join([f"{n} ({w:.2%})" for n, w in weights.items()]))
-        port_name = 'Portfolio'
-    port_returns.columns = [port_name]
-
-    return port_returns
-
+# ===============================================================================================
+# Regression Analysis Functions
+# ===============================================================================================
 
 def calc_port_oos_perf(
     returns: Union[pd.DataFrame, List[pd.Series]],
@@ -1485,7 +1502,7 @@ def calc_regression(
     drop_columns: Union[list, str] = None,
     keep_indexes: Union[list, str] = None,
     drop_indexes: Union[list, str] = None
-    ) -> Union[pd.DataFrame, model]:
+    ) -> Union[pd.DataFrame, sm.regression.linear_model.RegressionResultsWrapper]:
     
     """
     Performs an OLS regression of a "many-to-many" returns time series with optional intercept, timeframes, statistical ratios, and performance ratios.
@@ -1844,7 +1861,7 @@ def calc_cross_section_regression(
     drop_columns: Union[list, str] = None,
     keep_indexes: Union[list, str] = None,
     drop_indexes: Union[list, str] = None
-) -> Union[pd.DataFrame, model]:
+) -> Union[pd.DataFrame, sm.regression.linear_model.RegressionResultsWrapper]:
     """
     Performs an OLS regression for cross-sectional data with optional intercept and statistical ratios.
 
@@ -2235,6 +2252,9 @@ def calc_replication_oos_perf(
     )
 
 
+# ===============================================================================================
+# Currency Functions
+# ===============================================================================================
 
 def calc_fx_exc_ret(
     fx_rates: pd.DataFrame,
