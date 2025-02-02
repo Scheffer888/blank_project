@@ -44,7 +44,6 @@ pyxlsb==1.0.10
 quantstats
 requests==2.32.3
 ruff
--e git+https://github.com/Scheffer888/scheffer-quant.git@a432d28ada652e419c3eb5ce0aa256dd12dc370b#egg=scheffer_quant
 scikit-learn==1.5.2
 scipy==1.12.0
 seaborn==0.13.2
