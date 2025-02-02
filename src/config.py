@@ -18,7 +18,7 @@ over to the other configuration, for example.
 
 """
 
-from decouple import config as env_config
+from decouple import config as _config
 from pathlib import Path
 from pandas import to_datetime
 from scheffer_quant import config as sq_config
@@ -38,22 +38,22 @@ def if_relative_make_abs(path):
 
 # fmt: off
 ## Other .env variables
-WRDS_USERNAME = env_config("WRDS_USERNAME", default="")
-NASDAQ_API_KEY = env_config("NASDAQ_API_KEY", default="")
-START_DATE = env_config("START_DATE", default="1913-01-01", cast=to_datetime)
-END_DATE = env_config("END_DATE", default="2024-12-31", cast=to_datetime)
-USER = env_config("USER", default="")
-PIPELINE_DEV_MODE = env_config("PIPELINE_DEV_MODE", default=True, cast=bool)
-PIPELINE_THEME = env_config("PIPELINE_THEME", default="pipeline")
+WRDS_USERNAME = _config("WRDS_USERNAME", default="")
+NASDAQ_API_KEY = _config("NASDAQ_API_KEY", default="")
+START_DATE = _config("START_DATE", default="1913-01-01", cast=to_datetime)
+END_DATE = _config("END_DATE", default="2024-12-31", cast=to_datetime)
+USER = _config("USER", default="")
+PIPELINE_DEV_MODE = _config("PIPELINE_DEV_MODE", default=True, cast=bool)
+PIPELINE_THEME = _config("PIPELINE_THEME", default="pipeline")
 
 ## Paths
-DATA_DIR = if_relative_make_abs(env_config('DATA_DIR', default=Path('_data'), cast=Path))
+DATA_DIR = if_relative_make_abs(_config('DATA_DIR', default=Path('_data'), cast=Path))
 RAW_DATA_DIR = Path(DATA_DIR / "raw")
 PROCESSED_DATA_DIR = Path(DATA_DIR / "processed")
-MANUAL_DATA_DIR = if_relative_make_abs(env_config('MANUAL_DATA_DIR', default=Path('data_manual'), cast=Path))
-LOG_DIR = if_relative_make_abs(env_config('LOG_DIR', default=Path('logs'), cast=Path))
-OUTPUT_DIR = if_relative_make_abs(env_config('OUTPUT_DIR', default=Path('_output'), cast=Path))
-PUBLISH_DIR = if_relative_make_abs(env_config('PUBLISH_DIR', default=Path('_output/publish'), cast=Path))
+MANUAL_DATA_DIR = if_relative_make_abs(_config('MANUAL_DATA_DIR', default=Path('data_manual'), cast=Path))
+LOG_DIR = if_relative_make_abs(_config('LOG_DIR', default=Path('logs'), cast=Path))
+OUTPUT_DIR = if_relative_make_abs(_config('OUTPUT_DIR', default=Path('_output'), cast=Path))
+PUBLISH_DIR = if_relative_make_abs(_config('PUBLISH_DIR', default=Path('docs'), cast=Path))
 
 # Plot settings
 PLOT_WIDTH = 12
@@ -73,8 +73,7 @@ sq_config.Config.update(
     END_DATE=END_DATE
 )
 
-if __name__ == "__main__":
-
+def create_dirs():
     ## If they don't exist, create the _data and _output directories
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     RAW_DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -83,3 +82,6 @@ if __name__ == "__main__":
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     PUBLISH_DIR.mkdir(parents=True, exist_ok=True)
     LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+if __name__ == "__main__":
+    create_dirs()

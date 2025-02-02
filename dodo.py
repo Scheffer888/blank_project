@@ -11,6 +11,8 @@ import sys
 
 sys.path.insert(1, "./src/")
 
+import shutil
+import shlex
 from os import environ, getcwd, path
 from pathlib import Path
 
@@ -67,7 +69,6 @@ BASE_DIR = Path(config.BASE_DIR)
 DATA_DIR = Path(config.DATA_DIR)
 MANUAL_DATA_DIR = Path(config.MANUAL_DATA_DIR)
 OUTPUT_DIR = Path(config.OUTPUT_DIR)
-OS_TYPE = config.OS_TYPE
 PUBLISH_DIR = Path(config.PUBLISH_DIR)
 USER = config.USER
 
@@ -76,56 +77,90 @@ USER = config.USER
 ## Helper functions for automatic execution of Jupyter notebooks
 environ["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"
 def jupyter_execute_notebook(notebook):
-    return f"jupyter nbconvert --execute --to notebook --ClearMetadataPreprocessor.enabled=True --log-level WARN --inplace ./src/{notebook}.ipynb"
+    return f'jupyter nbconvert --execute --to notebook --ClearMetadataPreprocessor.enabled=True --log-level WARN --inplace "{shlex.quote(f"./src/{notebook}.ipynb")}"'
 def jupyter_to_html(notebook, output_dir=OUTPUT_DIR):
-    return f"jupyter nbconvert --to html --log-level WARN --output-dir={output_dir} ./src/{notebook}.ipynb"
+    return f'jupyter nbconvert --to html --log-level WARN --output-dir="{shlex.quote(str(output_dir))}" "{shlex.quote(f"./src/{notebook}.ipynb")}"'
 def jupyter_to_md(notebook, output_dir=OUTPUT_DIR):
     """Requires jupytext"""
-    return f"jupytext --to markdown --log-level WARN --output-dir={output_dir} ./src/{notebook}.ipynb"
+    return f'jupytext --to markdown --log-level WARN --output-dir="{shlex.quote(str(output_dir))}" "{shlex.quote(f"./src/{notebook}.ipynb")}"'
 def jupyter_to_python(notebook, build_dir):
     """Convert a notebook to a python script"""
-    return f"jupyter nbconvert --log-level WARN --to python ./src/{notebook}.ipynb --output _{notebook}.py --output-dir {build_dir}"
+    return f'jupyter nbconvert --log-level WARN --to python "{shlex.quote(f"./src/{notebook}.ipynb")}" --output "_{notebook}.py" --output-dir "{shlex.quote(str(build_dir))}"'
 def jupyter_clear_output(notebook):
-    return f"jupyter nbconvert --log-level WARN --ClearOutputPreprocessor.enabled=True --ClearMetadataPreprocessor.enabled=True --inplace ./src/{notebook}.ipynb"
-# fmt: on
+    return f'jupyter nbconvert --log-level WARN --ClearOutputPreprocessor.enabled=True --ClearMetadataPreprocessor.enabled=True --inplace "{shlex.quote(f"./src/{notebook}.ipynb")}"'
+    # fmt: on
 
 
-def copy_notebook_to_folder(notebook_stem, origin_folder, destination_folder):
-    origin_path = Path(origin_folder) / f"{notebook_stem}.ipynb"
-    destination_folder = Path(destination_folder)
-    destination_folder.mkdir(parents=True, exist_ok=True)
-    destination_path = destination_folder / f"{notebook_stem}.ipynb"
-    if OS_TYPE == "nix":
-        command = f"cp {origin_path} {destination_path}"
-    else:
-        command = f"copy  {origin_path} {destination_path}"
-    return command
+def copy_file(origin_path, destination_path, mkdir=True):
+    """Create a Python action for copying a file."""
+
+    def _copy_file():
+        origin = Path(origin_path)
+        dest = Path(destination_path)
+        if mkdir:
+            dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(origin, dest)
+
+    return _copy_file
 
 
 ##################################
 ## Begin rest of PyDoit tasks here
 ##################################
 
+def task_config():
+    """Create empty directories for data and output if they don't exist"""
+    return {
+        "actions": ["ipython ./src/settings.py"],
+        "targets": [DATA_DIR, OUTPUT_DIR],
+        "file_dep": ["./src/settings.py"],
+        "clean": [],
+    }
 
-def task_pull_fred():
-    """ """
-    file_dep = [
-        "./src/pull_fred.py",
-        "./src/pull_ofr_api_data.py",
-    ]
-    targets = [
-        DATA_DIR / "fred.parquet",
-        DATA_DIR / "ofr_public_repo_data.parquet",
-    ]
+def task_pull_public_repo_data():
+    """Pull public data from FRED and OFR API"""
 
     return {
         "actions": [
-            "ipython ./src/config.py",
+            "ipython ./src/settings.py",
             "ipython ./src/pull_fred.py",
             "ipython ./src/pull_ofr_api_data.py",
         ],
-        "targets": targets,
-        "file_dep": file_dep,
+        "targets": [
+            DATA_DIR / "fred.parquet",
+            DATA_DIR / "ofr_public_repo_data.parquet",
+        ],
+        "file_dep": [
+            "./src/settings.py",
+            "./src/pull_fred.py",
+            "./src/pull_ofr_api_data.py",
+        ],
+        "clean": [],  # Don't clean these files by default. The ideas
+        # is that a data pull might be expensive, so we don't want to
+        # redo it unless we really mean it. So, when you run
+        # doit clean, all other tasks will have their targets
+        # cleaned and will thus be rerun the next time you call doit.
+        # But this one wont.
+        # Use doit forget --all to redo all tasks. Use doit clean
+        # to clean and forget the cheaper tasks.
+    }
+
+
+def task_pull_ken_french_data():
+    """Pull public data from FRED and OFR API"""
+
+    return {
+        "actions": [
+            "ipython ./src/settings.py",
+            "ipython ./src/pull_ken_french_data.py",
+        ],
+        "targets": [
+            DATA_DIR / "25_Portfolios_OP_INV_5x5_daily.parquet",
+        ],
+        "file_dep": [
+            "./src/settings.py",
+            "./src/pull_ken_french_data.py",
+        ],
         "clean": [],  # Don't clean these files by default. The ideas
         # is that a data pull might be expensive, so we don't want to
         # redo it unless we really mean it. So, when you run
@@ -191,9 +226,6 @@ def task_summary_stats():
 
 def task_example_plot():
     """Example plots"""
-    file_dep = [Path("./src") / file for file in ["example_plot.py", "pull_fred.py"]]
-    file_output = ["example_plot.png"]
-    targets = [OUTPUT_DIR / file for file in file_output]
 
     return {
         "actions": [
@@ -201,8 +233,13 @@ def task_example_plot():
             # "time ipython ./src/example_plot.py",
             "ipython ./src/example_plot.py",
         ],
-        "targets": targets,
-        "file_dep": file_dep,
+        "targets": [
+            OUTPUT_DIR / "example_plot.png",
+        ],
+        "file_dep": [
+            "./src/example_plot.py",
+            "./src/pull_fred.py",
+        ],
         "clean": True,
     }
 
@@ -238,11 +275,16 @@ def task_chart_repo_rates():
 notebook_tasks = {
     "01_example_notebook_interactive.ipynb": {
         "file_dep": [],
-        "targets": [],
+        "targets": [
+            Path("./docs") / "01_example_notebook_interactive.html",
+        ],
     },
     "02_example_with_dependencies.ipynb": {
         "file_dep": ["./src/pull_fred.py"],
-        "targets": [Path(OUTPUT_DIR) / "GDP_graph.png"],
+        "targets": [
+            Path(OUTPUT_DIR) / "GDP_graph.png",
+            Path("./docs") / "02_example_with_dependencies.html",
+        ],
     },
     "03_public_repo_summary_charts.ipynb": {
         "file_dep": [
@@ -253,6 +295,19 @@ notebook_tasks = {
         "targets": [
             OUTPUT_DIR / "repo_rate_spikes_and_relative_reserves_levels.png",
             OUTPUT_DIR / "rates_relative_to_midpoint.png",
+            Path("./docs") / "03_public_repo_summary_charts.html",
+        ],
+    },
+    "04_ken_french_data.ipynb": {
+        "file_dep": [],
+        "targets": [
+            Path("./docs") / "04_ken_french_data.html",
+        ],
+    },
+    "index.ipynb": {
+        "file_dep": [],
+        "targets": [
+            Path("./docs") / "index.html",
         ],
     },
 }
@@ -263,16 +318,12 @@ def task_convert_notebooks_to_scripts():
     than to the notebook's metadata.
     """
     build_dir = Path(OUTPUT_DIR)
-    build_dir.mkdir(parents=True, exist_ok=True)
 
     for notebook in notebook_tasks.keys():
         notebook_name = notebook.split(".")[0]
         yield {
             "name": notebook,
             "actions": [
-                # jupyter_execute_notebook(notebook_name),
-                # jupyter_to_html(notebook_name),
-                # copy_notebook_to_folder(notebook_name, Path("./src"), "./docs_src/notebooks/"),
                 jupyter_clear_output(notebook_name),
                 jupyter_to_python(notebook_name, build_dir),
             ],
@@ -288,7 +339,6 @@ def task_run_notebooks():
     """Preps the notebooks for presentation format.
     Execute notebooks if the script version of it has been changed.
     """
-
     for notebook in notebook_tasks.keys():
         notebook_name = notebook.split(".")[0]
         yield {
@@ -297,8 +347,15 @@ def task_run_notebooks():
                 """python -c "import sys; from datetime import datetime; print(f'Start """ + notebook + """: {datetime.now()}', file=sys.stderr)" """,
                 jupyter_execute_notebook(notebook_name),
                 jupyter_to_html(notebook_name),
-                copy_notebook_to_folder(
-                    notebook_name, Path("./src"), "./_docs/notebooks/"
+                copy_file(
+                    Path("./src") / f"{notebook_name}.ipynb",
+                    OUTPUT_DIR / f"{notebook_name}.ipynb",
+                    mkdir=True,
+                ),
+                copy_file(
+                    OUTPUT_DIR / f"{notebook_name}.html",
+                    Path("./docs") / f"{notebook_name}.html",
+                    mkdir=True,
                 ),
                 jupyter_clear_output(notebook_name),
                 # jupyter_to_python(notebook_name, build_dir),
@@ -310,11 +367,10 @@ def task_run_notebooks():
             ],
             "targets": [
                 OUTPUT_DIR / f"{notebook_name}.html",
-                BASE_DIR / "_docs" / "notebooks" / f"{notebook_name}.ipynb",
+                OUTPUT_DIR / f"{notebook_name}.ipynb",
                 *notebook_tasks[notebook]["targets"],
             ],
             "clean": True,
-            # "verbosity": 1,
         }
 # fmt: on
 
@@ -323,136 +379,134 @@ def task_run_notebooks():
 # ## Task below is for LaTeX compilation
 # ###############################################################
 
-def task_compile_latex_docs():
-    """Compile the LaTeX documents to PDFs"""
-    file_dep = [
-        "./reports/report_example.tex",
-        "./reports/my_article_header.sty",
-        "./reports/slides_example.tex",
-        "./reports/my_beamer_header.sty",
-        "./reports/my_common_header.sty",
-        "./reports/report_simple_example.tex",
-        "./reports/slides_simple_example.tex",
-        "./src/example_plot.py",
-        "./src/example_table.py",
-    ]
-    targets = [
-        "./reports/report_example.pdf",
-        "./reports/slides_example.pdf",
-        "./reports/report_simple_example.pdf",
-        "./reports/slides_simple_example.pdf",
-    ]
+# def task_compile_latex_docs():
+#     """Compile the LaTeX documents to PDFs"""
+#     file_dep = [
+#         "./reports/report_example.tex",
+#         "./reports/my_article_header.sty",
+#         "./reports/slides_example.tex",
+#         "./reports/my_beamer_header.sty",
+#         "./reports/my_common_header.sty",
+#         "./reports/report_simple_example.tex",
+#         "./reports/slides_simple_example.tex",
+#         "./src/example_plot.py",
+#         "./src/example_table.py",
+#     ]
+#     targets = [
+#         "./reports/report_example.pdf",
+#         "./reports/slides_example.pdf",
+#         "./reports/report_simple_example.pdf",
+#         "./reports/slides_simple_example.pdf",
+#     ]
 
-    return {
-        "actions": [
-            # My custom LaTeX templates
-            "latexmk -xelatex -halt-on-error -cd ./reports/report_example.tex",  # Compile
-            "latexmk -xelatex -halt-on-error -c -cd ./reports/report_example.tex",  # Clean
-            "latexmk -xelatex -halt-on-error -cd ./reports/slides_example.tex",  # Compile
-            "latexmk -xelatex -halt-on-error -c -cd ./reports/slides_example.tex",  # Clean
-            # Simple templates based on small adjustments to Overleaf templates
-            "latexmk -xelatex -halt-on-error -cd ./reports/report_simple_example.tex",  # Compile
-            "latexmk -xelatex -halt-on-error -c -cd ./reports/report_simple_example.tex",  # Clean
-            "latexmk -xelatex -halt-on-error -cd ./reports/slides_simple_example.tex",  # Compile
-            "latexmk -xelatex -halt-on-error -c -cd ./reports/slides_simple_example.tex",  # Clean
-            #
-            # Example of compiling and cleaning in another directory. This often fails, so I don't use it
-            # f"latexmk -xelatex -halt-on-error -cd -output-directory=../_output/ ./reports/report_example.tex",  # Compile
-            # f"latexmk -xelatex -halt-on-error -c -cd -output-directory=../_output/ ./reports/report_example.tex",  # Clean
-        ],
-        "targets": targets,
-        "file_dep": file_dep,
-        "clean": True,
-    }
+#     return {
+#         "actions": [
+#             # My custom LaTeX templates
+#             "latexmk -xelatex -halt-on-error -cd ./reports/report_example.tex",  # Compile
+#             "latexmk -xelatex -halt-on-error -c -cd ./reports/report_example.tex",  # Clean
+#             "latexmk -xelatex -halt-on-error -cd ./reports/slides_example.tex",  # Compile
+#             "latexmk -xelatex -halt-on-error -c -cd ./reports/slides_example.tex",  # Clean
+#             # Simple templates based on small adjustments to Overleaf templates
+#             "latexmk -xelatex -halt-on-error -cd ./reports/report_simple_example.tex",  # Compile
+#             "latexmk -xelatex -halt-on-error -c -cd ./reports/report_simple_example.tex",  # Clean
+#             "latexmk -xelatex -halt-on-error -cd ./reports/slides_simple_example.tex",  # Compile
+#             "latexmk -xelatex -halt-on-error -c -cd ./reports/slides_simple_example.tex",  # Clean
+#             #
+#             # Example of compiling and cleaning in another directory. This often fails, so I don't use it
+#             # f"latexmk -xelatex -halt-on-error -cd -output-directory=../_output/ ./reports/report_example.tex",  # Compile
+#             # f"latexmk -xelatex -halt-on-error -c -cd -output-directory=../_output/ ./reports/report_example.tex",  # Clean
+#         ],
+#         "targets": targets,
+#         "file_dep": file_dep,
+#         "clean": True,
+#     }
 
 # ###############################################################
 # ## Sphinx documentation
 # ###############################################################
 
+# pipeline_doc_file_deps = pipeline_publish.get_file_deps(base_dir=BASE_DIR)
+# generated_md_targets = pipeline_publish.get_targets(base_dir=BASE_DIR)
 
 
-pipeline_doc_file_deps = pipeline_publish.get_file_deps(base_dir=BASE_DIR)
-generated_md_targets = pipeline_publish.get_targets(base_dir=BASE_DIR)
+# def task_pipeline_publish():
+#     """Create Pipeline Docs for Use in Sphinx"""
+
+#     file_dep = [
+#         "./src/pipeline_publish.py",
+#         "./docs_src/conf.py",
+#         "./README.md",
+#         "./pipeline.json",
+#         "./docs_src/_templates/chart_entry_bottom.md",
+#         "./docs_src/_templates/chart_entry_top.md",
+#         "./docs_src/_templates/pipeline_specs.md",
+#         "./docs_src/_templates/dataframe_specs.md",
+#         "./docs_src/charts.md",
+#         "./docs_src/index.md",
+#         *pipeline_doc_file_deps,
+#     ]
+
+#     targets = [
+#         *generated_md_targets,
+#     ]
+
+#     return {
+#         "actions": [
+#             "ipython ./src/pipeline_publish.py",
+#             ],
+#         "targets": targets,
+#         "file_dep": file_dep,
+#         "clean": True,
+#     }
 
 
-def task_pipeline_publish():
-    """Create Pipeline Docs for Use in Sphinx"""
-
-    file_dep = [
-        "./src/pipeline_publish.py",
-        "./docs_src/conf.py",
-        "./README.md",
-        "./pipeline.json",
-        "./docs_src/_templates/chart_entry_bottom.md",
-        "./docs_src/_templates/chart_entry_top.md",
-        "./docs_src/_templates/pipeline_specs.md",
-        "./docs_src/_templates/dataframe_specs.md",
-        "./docs_src/charts.md",
-        "./docs_src/index.md",
-        *pipeline_doc_file_deps,
-    ]
-
-    targets = [
-        *generated_md_targets,
-    ]
-
-    return {
-        "actions": [
-            "ipython ./src/pipeline_publish.py",
-            ],
-        "targets": targets,
-        "file_dep": file_dep,
-        "clean": True,
-    }
+# notebook_sphinx_pages = [
+#     "./_docs/_build/html/notebooks/" + notebook.split(".")[0] + ".html"
+#     for notebook in notebook_tasks.keys()
+# ]
+# sphinx_targets = [
+#     "./_docs/_build/html/index.html",
+#     "./_docs/_build/html/myst_markdown_demos.html",
+#     "./_docs/_build/html/apidocs/index.html",
+#     *notebook_sphinx_pages,
+# ]
 
 
-notebook_sphinx_pages = [
-    "./_docs/_build/html/notebooks/" + notebook.split(".")[0] + ".html"
-    for notebook in notebook_tasks.keys()
-]
-sphinx_targets = [
-    "./_docs/_build/html/index.html",
-    "./_docs/_build/html/myst_markdown_demos.html",
-    "./_docs/_build/html/apidocs/index.html",
-    *notebook_sphinx_pages,
-]
+# def task_compile_sphinx_docs():
+#     """Compile Sphinx Docs"""
+#     notebook_scripts = [
+#         OUTPUT_DIR / ("_" + notebook.split(".")[0] + ".py")
+#         for notebook in notebook_tasks.keys()
+#     ]
+#     file_dep = [
+#         "./docs_src/conf.py",
+#         "./docs_src/index.md",
+#         "./docs_src/myst_markdown_demos.md",
+#         "./docs_src/notebooks.md",
+#         *notebook_scripts,
+#         "./README.md",
+#         "./pipeline.json",
+#         "./src/pipeline_publish.py",
+#         "./docs_src/charts.md",
+#         # Pipeline docs
+#         "./src/pipeline_publish.py",
+#         "./docs_src/_templates/chart_entry_bottom.md",
+#         "./docs_src/_templates/chart_entry_top.md",
+#         "./docs_src/_templates/pipeline_specs.md",
+#         "./docs_src/_templates/dataframe_specs.md",
+#         *pipeline_doc_file_deps,
+#     ]
 
-
-def task_compile_sphinx_docs():
-    """Compile Sphinx Docs"""
-    notebook_scripts = [
-        OUTPUT_DIR / ("_" + notebook.split(".")[0] + ".py")
-        for notebook in notebook_tasks.keys()
-    ]
-    file_dep = [
-        "./docs_src/conf.py",
-        "./docs_src/index.md",
-        "./docs_src/myst_markdown_demos.md",
-        "./docs_src/notebooks.md",
-        *notebook_scripts,
-        "./README.md",
-        "./pipeline.json",
-        "./src/pipeline_publish.py",
-        "./docs_src/charts.md",
-        # Pipeline docs
-        "./src/pipeline_publish.py",
-        "./docs_src/_templates/chart_entry_bottom.md",
-        "./docs_src/_templates/chart_entry_top.md",
-        "./docs_src/_templates/pipeline_specs.md",
-        "./docs_src/_templates/dataframe_specs.md",
-        *pipeline_doc_file_deps,
-    ]
-
-    return {
-        "actions": [
-            "sphinx-build -M html ./_docs/ ./_docs/_build",
-        ],  # Use docs as build destination
-        # "actions": ["sphinx-build -M html ./docs/ ./docs/_build"], # Previous standard organization
-        "targets": sphinx_targets,
-        "file_dep": file_dep,
-        "task_dep": ["run_notebooks", "pipeline_publish"],
-        "clean": True,
-    }
+#     return {
+#         "actions": [
+#             "sphinx-build -M html ./_docs/ ./_docs/_build",
+#         ],  # Use docs as build destination
+#         # "actions": ["sphinx-build -M html ./docs/ ./docs/_build"], # Previous standard organization
+#         "targets": sphinx_targets,
+#         "file_dep": file_dep,
+#         "task_dep": ["run_notebooks", "pipeline_publish"],
+#         "clean": True,
+#     }
 
 
 ###############################################################
