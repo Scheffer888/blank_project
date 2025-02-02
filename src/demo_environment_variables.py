@@ -29,7 +29,7 @@ that the environment variables don't persist (are not set globally),
 DATA_DIR=../somedir/ OUTPUT_DIR=../otherdir/ python ./src/demo_environment_variables.py
 ```
 """
-import config
-print(config.DATA_DIR)
-print(config.OUTPUT_DIR)
-print(config.WRDS_USERNAME)
+import settings
+print(settings.DATA_DIR)
+print(settings.OUTPUT_DIR)
+print(settings.WRDS_USERNAME)

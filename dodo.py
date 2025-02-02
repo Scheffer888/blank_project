@@ -16,7 +16,7 @@ import shlex
 from os import environ, getcwd, path
 from pathlib import Path
 
-import config
+import settings
 import pipeline_publish
 from colorama import Fore, Style, init
 
@@ -65,12 +65,12 @@ else:
 init(autoreset=True)
 
 
-BASE_DIR = Path(config.BASE_DIR)
-DATA_DIR = Path(config.DATA_DIR)
-MANUAL_DATA_DIR = Path(config.MANUAL_DATA_DIR)
-OUTPUT_DIR = Path(config.OUTPUT_DIR)
-PUBLISH_DIR = Path(config.PUBLISH_DIR)
-USER = config.USER
+BASE_DIR = Path(settings.BASE_DIR)
+DATA_DIR = Path(settings.DATA_DIR)
+MANUAL_DATA_DIR = Path(settings.MANUAL_DATA_DIR)
+OUTPUT_DIR = Path(settings.OUTPUT_DIR)
+PUBLISH_DIR = Path(settings.PUBLISH_DIR)
+USER = settings.USER
 
 ## Helpers for handling Jupyter Notebook tasks
 # fmt: off
