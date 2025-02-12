@@ -25,26 +25,28 @@ https://wrds-www.wharton.upenn.edu/documents/400/CRSP_Programmers_Guide.pdf
 
 
 """
-import pandas as pd
-from pandas.tseries.offsets import MonthEnd, YearEnd
-
-import numpy as np
-import wrds
-
-import settings
 from pathlib import Path
 
-OUTPUT_DIR = Path(settings.OUTPUT_DIR)
-DATA_DIR = Path(settings.DATA_DIR)
-WRDS_USERNAME = settings.WRDS_USERNAME
-# START_DATE = config.START_DATE
-# END_DATE = config.END_DATE
+import pandas as pd
+import wrds
+
+from settings import config
+
+OUTPUT_DIR = Path(config("OUTPUT_DIR"))
+DATA_DIR = Path(config("DATA_DIR"))
+WRDS_USERNAME = config("WRDS_USERNAME")
+# START_DATE = config("START_DATE")
+# END_DATE = config("END_DATE")
 
 
 description_compustat = {
     "gvkey": "Global Company Key",
     "datadate": "Data Date",
     "at": "Assets - Total",
+    "sale": "Sales/Revenue",
+    "cogs": "Cost of Goods Sold",
+    "xsga": "Selling, General and Administrative Expense",
+    "xint": "Interest Expense, Net",
     "pstkl": "Preferred Stock - Liquidating Value",
     "txditc": "Deferred Taxes and Investment Tax Credit",
     "pstkrv": "Preferred Stock - Redemption Value",
@@ -60,20 +62,25 @@ description_compustat = {
 }
 
 
-def pull_compustat(wrds_username=WRDS_USERNAME):
+def pull_Compustat(wrds_username=WRDS_USERNAME, vars_str=None):
     """
     See description_compustat for a description of the variables.
+    Annual Compustat fundamental data.
     """
+    if vars_str is not None:
+        vars_str = ", ".join(vars_str)
+    else: 
+        vars_str = "gvkey, datadate, at, sale, cogs, xsga, xint, pstkl, txditc, pstkrv, seq, pstk, ni, sich, dp, ebit"
+
     sql_query = """
         SELECT 
-            gvkey, datadate, at, pstkl, txditc,
-            pstkrv, seq, pstk
+            {vars_str}
         FROM 
             comp.funda
         WHERE 
-            indfmt='INDL' AND -- industrial companies
+            indfmt='INDL' AND -- industrial reporting format (not financial services format)
             datafmt='STD' AND -- only standardized records
-            popsrc='D' AND -- only from primary sources
+            popsrc='D' AND -- only from domestic sources
             consol='C' AND -- consolidated financial statements
             datadate >= '01/01/1959'
         """
@@ -106,47 +113,21 @@ description_crsp = {
 }
 
 
-def pull_CRSP_stock_ciz(wrds_username=WRDS_USERNAME):
-    """Pull necessary CRSP monthly stock data to
-    compute Fama-French factors. Use the new CIZ format.
-    """
-    sql_query = """
-        SELECT 
-            a.permno, a.permco, a.mthcaldt, 
-            a.issuertype, a.securitytype, a.securitysubtype, a.sharetype, 
-            a.usincflg, 
-            a.primaryexch, a.conditionaltype, a.tradingstatusflg,
-            a.mthret, a.mthretx, a.shrout, a.mthprc
-        FROM 
-            crsp.msf_v2 AS a
-        WHERE 
-            a.mthcaldt BETWEEN '01/01/1959' AND '12/31/2022'
-        """
-
-    db = wrds.Connection(wrds_username=wrds_username)
-    crsp_m = db.raw_sql(sql_query, date_cols=["mthcaldt"])
-    db.close()
-
-    # change variable format to int
-    crsp_m[['permco','permno']]=crsp_m[['permco','permno']].astype(int)
-
-    # Line up date to be end of month
-    crsp_m['jdate']=crsp_m['mthcaldt']+MonthEnd(0)
-
-    return crsp_m
-
-
 description_crsp_comp_link = {
     "gvkey": "Global Company Key - A unique identifier for companies in the Compustat database.",
     "permno": "Permanent Number - A unique stock identifier assigned by CRSP to each security.",
     "linktype": "Link Type - Indicates the type of linkage between CRSP and Compustat records. 'L' types refer to links considered official by CRSP.",
-    "linkprim": "Primary Link Indicator - Specifies whether the link is a primary ('P') or secondary ('C') connection between the databases. Primary links are direct matches between CRSP and Compustat entities, while secondary links may represent subsidiary relationships or other less direct connections.",
+    "linkprim": "Primary Link Indicator - Specifies whether the link is a primary identified by Compustat ('P'), primary assigned by CRSP ('C') connection between the databases, or secondary ('J') for secondary securities for each company (used for total market cap). Primary links are direct matches between CRSP and Compustat entities, while secondary links may represent subsidiary relationships or other less direct connections.",
     "linkdt": "Link Date Start - The starting date for which the linkage between CRSP and Compustat data is considered valid.",
     "linkenddt": "Link Date End - The ending date for which the linkage is considered valid. A blank or high value (e.g., '2099-12-31') indicates that the link is still valid as of the last update.",
 }
 
 
-def pull_CRSP_Comp_Link_Table(wrds_username=WRDS_USERNAME):
+def pull_CRSP_Comp_link_table(wrds_username=WRDS_USERNAME):
+    """ 
+    Pull the CRSP-Compustat link table.
+    https://wrds-www.wharton.upenn.edu/pages/wrds-research/database-linking-matrix/linking-crsp-with-compustat/
+    """
     sql_query = """
         SELECT 
             gvkey, lpermno AS permno, linktype, linkprim, linkdt, linkenddt
@@ -162,28 +143,10 @@ def pull_CRSP_Comp_Link_Table(wrds_username=WRDS_USERNAME):
     return ccm
 
 
-def pull_Fama_French_factors(wrds_username=WRDS_USERNAME):
-    conn = wrds.Connection(wrds_username=settings.WRDS_USERNAME)
-    ff = conn.get_table(library="ff", table="factors_monthly")
-    conn.close()
-    ff[["smb", "hml"]] = ff[["smb", "hml"]].astype(float)
-    
-    ff["date"] = pd.to_datetime(ff["date"])
-    ff["date"] = ff["date"] + MonthEnd(0)
-    
-    return ff
-
-
 def load_compustat(data_dir=DATA_DIR):
     path = Path(data_dir) / "Compustat.parquet"
     comp = pd.read_parquet(path)
     return comp
-
-
-def load_CRSP_stock_ciz(data_dir=DATA_DIR):
-    path = Path(data_dir) / "CRSP_stock_ciz.parquet"
-    crsp = pd.read_parquet(path)
-    return crsp
 
 
 def load_CRSP_Comp_Link_Table(data_dir=DATA_DIR):
@@ -192,27 +155,14 @@ def load_CRSP_Comp_Link_Table(data_dir=DATA_DIR):
     return ccm
 
 
-def load_Fama_French_factors(data_dir=DATA_DIR):
-    path = Path(data_dir) / "FF_FACTORS.parquet"
-    ff = pd.read_parquet(path)
-    return ff
-
 def _demo():
     comp = load_compustat(data_dir=DATA_DIR)
-    crsp = load_CRSP_stock_ciz(data_dir=DATA_DIR)
     ccm = load_CRSP_Comp_Link_Table(data_dir=DATA_DIR)
-    ff = load_Fama_French_factors(data_dir=DATA_DIR)
 
 
 if __name__ == "__main__":
-    comp = pull_compustat(wrds_username=WRDS_USERNAME)
+    comp = pull_Compustat(wrds_username=WRDS_USERNAME)
     comp.to_parquet(DATA_DIR / "Compustat.parquet")
 
-    crsp = pull_CRSP_stock_ciz(wrds_username=WRDS_USERNAME)
-    crsp.to_parquet(DATA_DIR / "CRSP_stock_ciz.parquet")
-
-    ccm = pull_CRSP_Comp_Link_Table(wrds_username=WRDS_USERNAME)
+    ccm = pull_CRSP_Comp_link_table(wrds_username=WRDS_USERNAME)
     ccm.to_parquet(DATA_DIR / "CRSP_Comp_Link_Table.parquet")
-
-    ff = pull_Fama_French_factors(wrds_username=WRDS_USERNAME)
-    ff.to_parquet(DATA_DIR / "FF_FACTORS.parquet")
