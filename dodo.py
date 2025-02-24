@@ -3,10 +3,6 @@ like a Makefile, but is Python-based
 
 """
 
-#######################################
-## Configuration and Helpers for PyDoit
-#######################################
-## Make sure the src folder is in the path
 import sys
 
 sys.path.insert(1, "./src/")
@@ -17,8 +13,11 @@ from os import environ, getcwd, path
 from pathlib import Path
 
 import settings
-import pipeline_publish
 from colorama import Fore, Style, init
+
+# ====================================================================================
+# PyDoit Formatting
+# ====================================================================================
 
 ## Custom reporter: Print PyDoit Text in Green
 # This is helpful because some tasks write to sterr and pollute the output in
@@ -64,6 +63,9 @@ else:
     }
 init(autoreset=True)
 
+# ====================================================================================
+# Configuration and Helpers for PyDoit
+# ====================================================================================
 
 BASE_DIR = Path(settings.BASE_DIR)
 DATA_DIR = Path(settings.DATA_DIR)
@@ -375,9 +377,9 @@ def task_run_notebooks():
 # fmt: on
 
 
-# ###############################################################
-# ## Task below is for LaTeX compilation
-# ###############################################################
+# ====================================================================================
+# LaTeX compilation
+# ====================================================================================
 
 # def task_compile_latex_docs():
 #     """Compile the LaTeX documents to PDFs"""
@@ -421,98 +423,98 @@ def task_run_notebooks():
 #         "clean": True,
 #     }
 
-# ###############################################################
-# ## Sphinx documentation
-# ###############################################################
+# ====================================================================================
+# Sphinx documentation
+# ====================================================================================
 
-# pipeline_doc_file_deps = pipeline_publish.get_file_deps(base_dir=BASE_DIR)
-# generated_md_targets = pipeline_publish.get_targets(base_dir=BASE_DIR)
-
-
-# def task_pipeline_publish():
-#     """Create Pipeline Docs for Use in Sphinx"""
-
-#     file_dep = [
-#         "./src/pipeline_publish.py",
-#         "./docs_src/conf.py",
-#         "./README.md",
-#         "./pipeline.json",
-#         "./docs_src/_templates/chart_entry_bottom.md",
-#         "./docs_src/_templates/chart_entry_top.md",
-#         "./docs_src/_templates/pipeline_specs.md",
-#         "./docs_src/_templates/dataframe_specs.md",
-#         "./docs_src/charts.md",
-#         "./docs_src/index.md",
-#         *pipeline_doc_file_deps,
-#     ]
-
-#     targets = [
-#         *generated_md_targets,
-#     ]
-
-#     return {
-#         "actions": [
-#             "ipython ./src/pipeline_publish.py",
-#             ],
-#         "targets": targets,
-#         "file_dep": file_dep,
-#         "clean": True,
-#     }
+notebook_sphinx_pages = [
+    "./_docs/_build/html/notebooks/" + notebook.split(".")[0] + ".html"
+    for notebook in notebook_tasks.keys()
+]
+sphinx_targets = [
+    "./_docs/_build/html/index.html",
+    "./_docs/_build/html/myst_markdown_demos.html",
+    *notebook_sphinx_pages,
+]
 
 
-# notebook_sphinx_pages = [
-#     "./_docs/_build/html/notebooks/" + notebook.split(".")[0] + ".html"
-#     for notebook in notebook_tasks.keys()
-# ]
-# sphinx_targets = [
-#     "./_docs/_build/html/index.html",
-#     "./_docs/_build/html/myst_markdown_demos.html",
-#     "./_docs/_build/html/apidocs/index.html",
-#     *notebook_sphinx_pages,
-# ]
+def copy_docs_src_to_docs():
+    """
+    Copy all files and subdirectories from the docs_src directory to the _docs directory.
+    This function loops through all files in docs_src and copies them individually to _docs,
+    preserving the directory structure. It does not delete the contents of _docs beforehand.
+    """
+    src = Path("docs_src")
+    dst = Path("_docs")
+    
+    # Ensure the destination directory exists
+    dst.mkdir(parents=True, exist_ok=True)
+    
+    # Loop through all files and directories in docs_src
+    for item in src.rglob('*'):
+        relative_path = item.relative_to(src)
+        target = dst / relative_path
+        if item.is_dir():
+            target.mkdir(parents=True, exist_ok=True)
+        else:
+            shutil.copy2(item, target)
+
+def copy_docs_build_to_docs():
+    """
+    Copy all files and subdirectories from _docs/_build/html to docs.
+    This function copies each file individually while preserving the directory structure.
+    It does not delete any existing contents in docs.
+    After copying, it creates an empty .nojekyll file in the docs directory.
+    """
+    src = Path("_docs/_build/html")
+    dst = Path("docs")
+    dst.mkdir(parents=True, exist_ok=True)
+    
+    # Loop through all files and directories in src
+    for item in src.rglob('*'):
+        relative_path = item.relative_to(src)
+        target = dst / relative_path
+        if item.is_dir():
+            target.mkdir(parents=True, exist_ok=True)
+        else:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(item, target)
+    
+    # Touch an empty .nojekyll file in the docs directory.
+    (dst / ".nojekyll").touch()
 
 
-# def task_compile_sphinx_docs():
-#     """Compile Sphinx Docs"""
-#     notebook_scripts = [
-#         OUTPUT_DIR / ("_" + notebook.split(".")[0] + ".py")
-#         for notebook in notebook_tasks.keys()
-#     ]
-#     file_dep = [
-#         "./docs_src/conf.py",
-#         "./docs_src/index.md",
-#         "./docs_src/myst_markdown_demos.md",
-#         "./docs_src/notebooks.md",
-#         *notebook_scripts,
-#         "./README.md",
-#         "./pipeline.json",
-#         "./src/pipeline_publish.py",
-#         "./docs_src/charts.md",
-#         # Pipeline docs
-#         "./src/pipeline_publish.py",
-#         "./docs_src/_templates/chart_entry_bottom.md",
-#         "./docs_src/_templates/chart_entry_top.md",
-#         "./docs_src/_templates/pipeline_specs.md",
-#         "./docs_src/_templates/dataframe_specs.md",
-#         *pipeline_doc_file_deps,
-#     ]
-
-#     return {
-#         "actions": [
-#             "sphinx-build -M html ./_docs/ ./_docs/_build",
-#         ],  # Use docs as build destination
-#         # "actions": ["sphinx-build -M html ./docs/ ./docs/_build"], # Previous standard organization
-#         "targets": sphinx_targets,
-#         "file_dep": file_dep,
-#         "task_dep": ["run_notebooks", "pipeline_publish"],
-#         "clean": True,
-#     }
 
 
-###############################################################
-## Uncomment the task below if you have R installed. See README
-###############################################################
+def task_compile_sphinx_docs():
+    """Compile Sphinx Docs"""
+    notebook_scripts = [
+        OUTPUT_DIR / ("_" + notebook.split(".")[0] + ".py")
+        for notebook in notebook_tasks.keys()
+    ]
+    file_dep = [
+        "./docs_src/conf.py",
+        "./docs_src/index.md",
+        "./docs_src/myst_markdown_demos.md",
+        *notebook_scripts,
+    ]
 
+    return {
+        "actions": [
+            copy_docs_src_to_docs, # Move configurations and source files from docs_src to _docs
+            "sphinx-build -M html ./_docs/ ./_docs/_build", # Build the Sphinx documentation from the source files at ./_docs/ and output to ./_docs/_build
+            copy_docs_build_to_docs, # Move the built documentation from ./_docs/_build to docs
+            ],
+        "targets": sphinx_targets,
+        "file_dep": file_dep,
+        "task_dep": ["run_notebooks"],
+        "clean": True,
+    }
+
+
+# ====================================================================================
+# R Configuration
+# ====================================================================================
 
 # def task_install_r_packages():
 #     """Example R plots"""

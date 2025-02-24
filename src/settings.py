@@ -21,7 +21,7 @@ over to the other configuration, for example.
 from decouple import config as _config
 from pathlib import Path
 from pandas import to_datetime
-from scheffer_quant import config as sq_config
+from scheffer_quant import settings as sq_settings
 
 
 # Absolute path to root directory of the project
@@ -59,7 +59,7 @@ PUBLISH_DIR = if_relative_make_abs(_config('PUBLISH_DIR', default=Path('docs'), 
 PLOT_WIDTH = 12
 PLOT_HEIGHT = 8
 
-sq_config.Config.update(
+sq_settings.Config.update(
     BASE_DIR=BASE_DIR,
     DATA_DIR=DATA_DIR,
     RAW_DATA_DIR=RAW_DATA_DIR,
@@ -80,7 +80,7 @@ def create_dirs():
     PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
     MANUAL_DATA_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    PUBLISH_DIR.mkdir(parents=True, exist_ok=True)
+    #PUBLISH_DIR.mkdir(parents=True, exist_ok=True)
     LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 if __name__ == "__main__":

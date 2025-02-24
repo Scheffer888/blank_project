@@ -34,7 +34,7 @@ external_toc_exclude_missing = True
 # ones.
 extensions = [
     # "myst_parser",
-    "autodoc2",
+    # "autodoc2",
     "sphinx.ext.intersphinx",
     # "numpydoc",
     "myst_nb",
@@ -47,13 +47,13 @@ extensions = [
 
 ## Use autodoc2 to generate documentation from the source code
 # Here are some reasons why: https://sphinx-autodoc2.readthedocs.io/en/latest/autodoc_diff.html
-autodoc2_packages = [
-    # "../src",
-    "../src/misc_tools.py",
-]
+# autodoc2_packages = [
+#     # "../src",
+#     "../src/misc_tools.py",
+# ]
 # Use MyST by default for all docstrings
 # https://sphinx-autodoc2.readthedocs.io/en/latest/quickstart.html#using-markdown-myst-docstrings
-autodoc2_render_plugin = "myst"
+# autodoc2_render_plugin = "myst"
 
 myst_enable_extensions = [
     "amsmath",
@@ -134,22 +134,22 @@ html_theme_options = {
     "use_issues_button": True,
 }
 html_logo = "../assets/logo.png"
-html_title = "Blank Project Template"
+html_title = "HW 4"
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+# html_static_path = ["_static"]
 
 html_js_files = [
     "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js",
 ]
 
-# -- Ablog options -----------------------------------------------------------
-blog_path = "charts/index"
-blog_post_pattern = [
-    # "notebooks/*.ipynb",
-    "charts/*.md",
-]
+# # -- Ablog options -----------------------------------------------------------
+# blog_path = "charts/index"
+# blog_post_pattern = [
+#     # "notebooks/*.ipynb",
+#     "charts/*.md",
+# ]
 
 html_sidebars = {
     "**": [

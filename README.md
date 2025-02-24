@@ -43,6 +43,16 @@ run `doit` as before.
 
 ### Other commands
 
+#### Folders
+
+Folders that start with `_` are automatically generated.
+`_output` contains the .py generated from jupyter notebooks, and the jupyter notebooks with outputs, both in .md and in .html, while in the `/src` folder, the notebooks will be stored cleaned from outputs (after running doit). 
+  - That is in order to avoid unecessary commits from changes from simply opening or running the notebook.
+
+_docs is where the run notebooks are put along with the copies of the docs source code, it is a directory where the build happens. Then, the build html gets put into docs since GitHub pages requires that the HTML be kept in a directory called docs_src
+
+Sphinx documentation is saved on `/docs` and `/docs_src` folders. These folder are, by default, ignored by Git. If you want to publish the documentation, you need to create a new branch "gs-pages" and uncomment those from .gitignore.
+
 #### Unit Tests and Doc Tests
 
 You can run the unit test, including doctests, with the following command:
@@ -116,9 +126,9 @@ Of course, the _data directory and _output directory can be kept elsewhere on th
 machine. To make this easy, I always include the ability to customize these
 locations by defining the path to these directories in environment variables,
 which I intend to be defined in the `.env` file, though they can also simply be
-defined on the command line or elsewhere. The `config.py` is reponsible for
+defined on the command line or elsewhere. The `settings.py` is reponsible for
 loading these environment variables and doing some like preprocessing on them.
-The `config.py` file is the entry point for all other scripts to these
+The `settings.py` file is the entry point for all other scripts to these
 definitions. That is, all code that references these variables and others are
 loading by importing `config`.
 
