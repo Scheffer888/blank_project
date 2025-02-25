@@ -69,6 +69,7 @@ init(autoreset=True)
 
 BASE_DIR = Path(settings.BASE_DIR)
 DATA_DIR = Path(settings.DATA_DIR)
+RAW_DATA_DIR = Path(settings.RAW_DATA_DIR)
 MANUAL_DATA_DIR = Path(settings.MANUAL_DATA_DIR)
 OUTPUT_DIR = Path(settings.OUTPUT_DIR)
 PUBLISH_DIR = Path(settings.PUBLISH_DIR)
@@ -114,7 +115,7 @@ def task_config():
     """Create empty directories for data and output if they don't exist"""
     return {
         "actions": ["ipython ./src/settings.py"],
-        "targets": [DATA_DIR, OUTPUT_DIR],
+        "targets": [RAW_DATA_DIR, OUTPUT_DIR],
         "file_dep": ["./src/settings.py"],
         "clean": [],
     }
@@ -129,8 +130,8 @@ def task_pull_public_repo_data():
             "ipython ./src/pull_ofr_api_data.py",
         ],
         "targets": [
-            DATA_DIR / "fred.parquet",
-            DATA_DIR / "ofr_public_repo_data.parquet",
+            RAW_DATA_DIR / "fred.parquet",
+            RAW_DATA_DIR / "ofr_public_repo_data.parquet",
         ],
         "file_dep": [
             "./src/settings.py",
@@ -157,7 +158,7 @@ def task_pull_ken_french_data():
             "ipython ./src/pull_ken_french_data.py",
         ],
         "targets": [
-            DATA_DIR / "25_Portfolios_OP_INV_5x5_daily.parquet",
+            RAW_DATA_DIR / "25_Portfolios_OP_INV_5x5_daily.parquet",
         ],
         "file_dep": [
             "./src/settings.py",
@@ -191,7 +192,7 @@ def task_pull_ken_french_data():
 #         "CRSP_stock.parquet",
 #         "fed_yield_curve.parquet",
 #         ]
-#     targets = [DATA_DIR / file for file in file_output]
+#     targets = [RAW_DATA_DIR / file for file in file_output]
 
 #     return {
 #         "actions": [
@@ -253,10 +254,10 @@ def task_chart_repo_rates():
         "./src/chart_relative_repo_rates.py",
     ]
     targets = [
-        DATA_DIR / "repo_public.parquet",
-        DATA_DIR / "repo_public.xlsx",
-        DATA_DIR / "repo_public_relative_fed.parquet",
-        DATA_DIR / "repo_public_relative_fed.xlsx",
+        RAW_DATA_DIR / "repo_public.parquet",
+        RAW_DATA_DIR / "repo_public.xlsx",
+        RAW_DATA_DIR / "repo_public_relative_fed.parquet",
+        RAW_DATA_DIR / "repo_public_relative_fed.xlsx",
         OUTPUT_DIR / "repo_rates.html",
         OUTPUT_DIR / "repo_rates_normalized.html",
         OUTPUT_DIR / "repo_rates_normalized_w_balance_sheet.html",

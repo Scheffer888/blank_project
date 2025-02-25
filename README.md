@@ -17,8 +17,8 @@ and [mac](https://tug.org/mactex/mactex-download.html) installers).
 Having done these things, open a terminal and navigate to the root directory of the project and create a 
 conda environment using the following command:
 ```
-conda create -n blank python=3.12
-conda activate blank
+conda create -n env_name_here python=3.12
+conda activate env_name_here
 ```
 and then install the dependencies with pip
 ```
@@ -30,8 +30,7 @@ doit
 ```
 And that's it!
 
-If you would also like to run the R code included in this project, you can either install
-R and the required packages manually, or you can use the included `environment.yml` file.
+If you would also like to run the R code included in this project, you can either install R and the required packages manually, or you can use the included `environment.yml` file.
 To do this, run
 ```
 mamba env create -f environment.yml
@@ -103,8 +102,6 @@ set_env.bat
 - `dodo.py`: is the file that defines the tasks to be run by doit. It is the equivalent of a Makefile. It is the main entry point for running code in this project. It is also used to generate the documentation.
 - `settings.py`: is the file that defines the settings for the project. It is the main entry point for running code in this project. It is also used to generate the documentation.
 - `pyproject.toml`: is currently used to configure some 
-- 
-
 
 
 ### Data and Output Storage
@@ -120,6 +117,7 @@ Output is stored in the "_output" directory. This includes dataframes, charts, a
 The _data directory and _output directory can be kept elsewhere on the machine. To make this easy, I always include the ability to customize these locations by defining the path to these directories in environment variables, which I intend to be defined in the `.env` file, though they can also simply be defined on the command line or elsewhere. The `settings.py` is reponsible for loading these environment variables and doing some like preprocessing on them.
 
 The `settings.py` file is the entry point for all other scripts to these definitions. That is, all code that references these variables and others are loading by importing `config`.
+
 
 ### Naming Conventions
 
