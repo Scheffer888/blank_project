@@ -9,13 +9,18 @@
 # This file may be used to create an environment using:
 # to match the appropriate syntax:
 ABlog==0.11.11
+aiofiles
 black==24.8.0
+clerk-backend-api==1.8.0
 colorama
 doit==0.36.0
 fabric==3.2.2
+fastapi[standard]==0.115.8
 holidays
+httpx==0.28.1
 ipython
 jaydebeapi
+jinja2
 jupyter
 jupyter-book
 jupyterlab
@@ -56,6 +61,8 @@ sphinxcontrib-applehelp==2.0.0
 sphinxcontrib-htmlhelp==2.1.0
 sphinxext-rediraffe
 statsmodels==0.14.4
+starlette==0.45.3
+uvicorn
 weightedstats
 wrds==3.2.0
 xbbg==0.7.7
