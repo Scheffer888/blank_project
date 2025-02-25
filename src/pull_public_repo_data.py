@@ -6,8 +6,8 @@ import pull_ofr_api_data
 import os
 from pathlib import Path
 import settings
-OUTPUT_DIR = settings.OUTPUT_DIR
-DATA_DIR = settings.DATA_DIR
+OUTPUT_DIR = config("OUTPUT_DIR")
+DATA_DIR = config("DATA_DIR")
 
 def load_all(data_dir = DATA_DIR, normalize_timing=True):
     data_dir = Path(data_dir)

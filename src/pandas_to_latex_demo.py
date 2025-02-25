@@ -22,8 +22,8 @@ np.random.seed(100)
 
 import settings
 from pathlib import Path
-DATA_DIR = Path(settings.DATA_DIR)
-OUTPUT_DIR = Path(settings.OUTPUT_DIR)
+DATA_DIR = Path(config("DATA_DIR"))
+OUTPUT_DIR = Path(config("OUTPUT_DIR"))
 
 
 ## Suppress scientific notation and limit to 3 decimal places

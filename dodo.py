@@ -12,7 +12,7 @@ import shlex
 from os import environ, getcwd, path
 from pathlib import Path
 
-import settings
+from settings import config
 from colorama import Fore, Style, init
 
 # ====================================================================================
@@ -67,13 +67,14 @@ init(autoreset=True)
 # Configuration and Helpers for PyDoit
 # ====================================================================================
 
-BASE_DIR = Path(settings.BASE_DIR)
-DATA_DIR = Path(settings.DATA_DIR)
-RAW_DATA_DIR = Path(settings.RAW_DATA_DIR)
-MANUAL_DATA_DIR = Path(settings.MANUAL_DATA_DIR)
-OUTPUT_DIR = Path(settings.OUTPUT_DIR)
-PUBLISH_DIR = Path(settings.PUBLISH_DIR)
-USER = settings.USER
+BASE_DIR = Path(config("BASE_DIR"))
+DATA_DIR = Path(config("DATA_DIR"))
+RAW_DATA_DIR = Path(config("RAW_DATA_DIR"))
+MANUAL_DATA_DIR = Path(config("MANUAL_DATA_DIR"))
+OUTPUT_DIR = Path(config("OUTPUT_DIR"))
+PUBLISH_DIR = Path(config("PUBLISH_DIR"))
+USER = config("USER") 
+OS_TYPE = config("OS_TYPE")
 
 ## Helpers for handling Jupyter Notebook tasks
 # fmt: off

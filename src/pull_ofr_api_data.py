@@ -52,7 +52,7 @@ def pull_series_list(series_list = list(series_descriptions.keys())):
 if __name__ == "__main__":
     df = pull_series_list(series_list = list(series_descriptions.keys()))
     
-    DATA_DIR = settings.DATA_DIR
+    DATA_DIR = config("DATA_DIR")
     filedir = Path(DATA_DIR)
     filedir.mkdir(parents=True, exist_ok=True)
     df.to_parquet(filedir / 'ofr_public_repo_data.parquet')

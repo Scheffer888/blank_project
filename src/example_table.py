@@ -9,8 +9,8 @@ import numpy as np
 
 import settings
 from pathlib import Path
-DATA_DIR = Path(settings.DATA_DIR)
-OUTPUT_DIR = Path(settings.OUTPUT_DIR)
+DATA_DIR = Path(config("DATA_DIR"))
+OUTPUT_DIR = Path(config("OUTPUT_DIR"))
 
 import pull_fred
 

@@ -5,9 +5,9 @@ import numpy as np
 from pathlib import Path
 import settings
 
-DATA_DIR = Path(settings.DATA_DIR)
-START_DATE = settings.START_DATE
-END_DATE = settings.END_DATE
+DATA_DIR = Path(config("DATA_DIR"))
+START_DATE = config("START_DATE")
+END_DATE = config("END_DATE")
 
 
 series_to_pull = {

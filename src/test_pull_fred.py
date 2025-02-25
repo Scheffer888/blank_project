@@ -4,7 +4,7 @@ import pytest
 import settings
 import pull_fred
 
-DATA_DIR = settings.DATA_DIR
+DATA_DIR = config("DATA_DIR")
 
 
 def test_pull_fred_functionality():
