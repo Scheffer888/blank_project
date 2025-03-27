@@ -68,7 +68,8 @@ d["PROCESSED_DATA_DIR"] = Path(d["DATA_DIR"] / "processed")
 d["MANUAL_DATA_DIR"] = Path(d["DATA_DIR"] / "manual")
 d["LOG_DIR"] = if_relative_make_abs(_config('LOG_DIR', default=Path('logs'), cast=Path))
 d["OUTPUT_DIR"] = if_relative_make_abs(_config('OUTPUT_DIR', default=Path('_output'), cast=Path))
-d["PUBLISH_DIR"] = if_relative_make_abs(_config('PUBLISH_DIR', default=Path('docs'), cast=Path))
+#d["PUBLISH_DIR"] = if_relative_make_abs(_config('PUBLISH_DIR', default=Path('docs'), cast=Path))
+d["REPORTS_DIR"] = if_relative_make_abs(_config('REPORTS_DIR', default=Path('reports'), cast=Path))
 
 
 def config(*args, **kwargs):
@@ -102,6 +103,7 @@ def create_dirs():
     d["PROCESSED_DATA_DIR"].mkdir(parents=True, exist_ok=True)
     d["MANUAL_DATA_DIR"].mkdir(parents=True, exist_ok=True)
     d["OUTPUT_DIR"].mkdir(parents=True, exist_ok=True)
+    d["REPORTS_DIR"].mkdir(parents=True, exist_ok=True)
     #d["PUBLISH_DIR.mkdir(parents=True, exist_ok=True)
     d["LOG_DIR"].mkdir(parents=True, exist_ok=True)
 

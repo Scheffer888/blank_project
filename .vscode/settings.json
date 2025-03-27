@@ -3,5 +3,16 @@
         "src"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+
+    // R configuration
+    "r.rterm.windows": "C:\\Program Files\\R\\R-4.4.1\\bin\\R.exe",  // ← Update if your R version/path is different
+    "r.rterm.option": [],
+    "r.source.focus": true,
+    "r.alwaysUseActiveTerminal": true,
+
+    // LaTeX Configuration:
+    "latex-workshop.latex.autoBuild.run": "never",
+    "latex-workshop.latex.autoBuild.onSave.enabled": false,
+
 }

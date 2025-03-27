@@ -2,6 +2,14 @@
 # current_dir <- getwd()
 # cat("Current working directory:", current_dir, "\n")
 
+# Ensure fs and dotenv are installed before using them
+bootstrap_packages <- c("fs", "dotenv")
+for (pkg in bootstrap_packages) {
+  if (!requireNamespace(pkg, quietly = TRUE)) {
+    install.packages(pkg, repos = "https://cran.rstudio.com/")
+  }
+}
+
 #### <<< Load .env
 library(fs)
 library(dotenv)
@@ -20,7 +28,8 @@ OUTPUT_DIR <- Sys.getenv("OUTPUT_DIR")
 
 # Read the requirements file
 packages <- readLines("r_requirements.txt")
-packages <- packages[!grepl("^#", packages)]
+packages <- trimws(packages)
+packages <- packages[packages != "" & !grepl("^#", packages)]
 
 ## Options for installing arrow
 # See https://stackoverflow.com/a/73054288
@@ -29,6 +38,11 @@ Sys.setenv(NOT_CRAN = "true")
 
 # Function to install packages if not already installed
 r_lib = sprintf(R_LIB, USER)
+.libPaths(r_lib)
+if (!dir.exists(r_lib)) {
+  dir.create(r_lib, recursive = TRUE)
+}
+
 install_if_missing <- function(package) {
   if (!requireNamespace(package, quietly = TRUE)) {
     cat("Installing package:", package, "\n")

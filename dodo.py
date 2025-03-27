@@ -9,6 +9,7 @@ sys.path.insert(1, "./src/")
 
 import shutil
 import shlex
+import subprocess
 from os import environ, getcwd, path
 from pathlib import Path
 
@@ -72,6 +73,7 @@ DATA_DIR = Path(config("DATA_DIR"))
 RAW_DATA_DIR = Path(config("RAW_DATA_DIR"))
 MANUAL_DATA_DIR = Path(config("MANUAL_DATA_DIR"))
 OUTPUT_DIR = Path(config("OUTPUT_DIR"))
+REPORTS_DIR = Path(config("REPORTS_DIR"))
 PUBLISH_DIR = Path(config("PUBLISH_DIR"))
 USER = config("USER") 
 OS_TYPE = config("OS_TYPE")
@@ -380,52 +382,6 @@ def task_run_notebooks():
 
 
 # ====================================================================================
-# LaTeX compilation
-# ====================================================================================
-
-# def task_compile_latex_docs():
-#     """Compile the LaTeX documents to PDFs"""
-#     file_dep = [
-#         "./reports/report_example.tex",
-#         "./reports/my_article_header.sty",
-#         "./reports/slides_example.tex",
-#         "./reports/my_beamer_header.sty",
-#         "./reports/my_common_header.sty",
-#         "./reports/report_simple_example.tex",
-#         "./reports/slides_simple_example.tex",
-#         "./src/example_plot.py",
-#         "./src/example_table.py",
-#     ]
-#     targets = [
-#         "./reports/report_example.pdf",
-#         "./reports/slides_example.pdf",
-#         "./reports/report_simple_example.pdf",
-#         "./reports/slides_simple_example.pdf",
-#     ]
-
-#     return {
-#         "actions": [
-#             # My custom LaTeX templates
-#             "latexmk -xelatex -halt-on-error -cd ./reports/report_example.tex",  # Compile
-#             "latexmk -xelatex -halt-on-error -c -cd ./reports/report_example.tex",  # Clean
-#             "latexmk -xelatex -halt-on-error -cd ./reports/slides_example.tex",  # Compile
-#             "latexmk -xelatex -halt-on-error -c -cd ./reports/slides_example.tex",  # Clean
-#             # Simple templates based on small adjustments to Overleaf templates
-#             "latexmk -xelatex -halt-on-error -cd ./reports/report_simple_example.tex",  # Compile
-#             "latexmk -xelatex -halt-on-error -c -cd ./reports/report_simple_example.tex",  # Clean
-#             "latexmk -xelatex -halt-on-error -cd ./reports/slides_simple_example.tex",  # Compile
-#             "latexmk -xelatex -halt-on-error -c -cd ./reports/slides_simple_example.tex",  # Clean
-#             #
-#             # Example of compiling and cleaning in another directory. This often fails, so I don't use it
-#             # f"latexmk -xelatex -halt-on-error -cd -output-directory=../_output/ ./reports/report_example.tex",  # Compile
-#             # f"latexmk -xelatex -halt-on-error -c -cd -output-directory=../_output/ ./reports/report_example.tex",  # Clean
-#         ],
-#         "targets": targets,
-#         "file_dep": file_dep,
-#         "clean": True,
-#     }
-
-# ====================================================================================
 # Sphinx documentation
 # ====================================================================================
 
@@ -556,6 +512,33 @@ def task_compile_sphinx_docs():
 #         "clean": True,
 #     }
 
+# r_scripts = {
+#     "example_matrix_to_latex.R": {
+#         "deps": [],
+#         "target": [
+#             OUTPUT_DIR / "example_matrix_table.tex", # output used later in LaTeX tasks
+#         ],
+#     },
+# }
+
+# def task_run_r_scripts():
+#     """Run R scripts to generate outputs used as dependencies in LaTeX tasks."""
+#     for script, cfg in r_scripts.items():
+#         base_name = script.replace(".R", "")
+#         script_path = Path("src") / script 
+#         target_path = cfg["target"][0]
+
+#         yield {
+#             "name": base_name,
+#             "actions": [
+#                 # Run the R script
+#                 f"Rscript {script_path}",
+#                 # Touch the target so doit sees a fresh timestamp
+#                 lambda: target_path.touch(),
+#             ],
+#             "file_dep": [str(script_path)] + cfg.get("deps", []),
+#             "targets": [str(target_path)],
+#         }
 
 # rmarkdown_tasks = {
 #     "04_example_regressions.Rmd": {
@@ -614,6 +597,102 @@ def task_compile_sphinx_docs():
 #         }
 
 
+# ====================================================================================
+# LaTeX compilation
+# ====================================================================================
+
+latex_docs = {
+    "example_homework.tex": {
+        "deps": [
+            OUTPUT_DIR / "example_table.tex",
+            ],
+    },
+    "report_example.tex": {
+        "deps": [
+            OUTPUT_DIR / "example_table.py",
+            OUTPUT_DIR / "example_plot.py",
+            OUTPUT_DIR / "my_common_header.sty",
+            OUTPUT_DIR / "my_article_header.sty",
+            ],
+    },
+    "slides_example.tex": {
+        "deps": [
+            OUTPUT_DIR / "example_plot.py",
+            ],
+    },
+    "report_simple_example.tex": {
+        "deps": [
+            OUTPUT_DIR / "example_plot.py",
+            ],
+    },
+    "slides_simple_example.tex": {
+        "deps": [
+            OUTPUT_DIR / "my_beamer_header.sty",
+            OUTPUT_DIR / "my_common_header.sty"
+            ],
+    },
+}
+
+def compile_to_build_and_move_pdf(tex_path: Path, build_dir: Path):
+    """
+    1) Make build_dir if necessary.
+    2) Run latexmk there, storing all aux/log/pdf artifacts in build_dir.
+    3) If successful, copy PDF from build_dir to tex_path's folder.
+    4) Remove build_dir.
+    """
+    if build_dir.exists():
+        shutil.rmtree(build_dir)
+    build_dir.mkdir(exist_ok=True)
+
+    # The -outdir=... argument tells latexmk to write .aux, .log, .pdf, etc. all inside build_dir
+    cmd = [
+        "latexmk",
+        "-xelatex",
+        "-pdf",
+        "-halt-on-error",
+        "-interaction=nonstopmode",
+        f"-outdir={build_dir}",
+        str(tex_path)
+    ]
+
+    print("Running:", " ".join(cmd))
+    # Run latexmk as a subprocess
+    proc = subprocess.run(cmd, capture_output=True, text=True)
+    if proc.returncode != 0:
+        # Latexmk failed => remove the build directory to leave no junk, then raise
+        shutil.rmtree(build_dir, ignore_errors=True)
+        raise RuntimeError(f"Latexmk failed for {tex_path.name}, see logs above.")
+
+    # If we get here, latexmk succeeded => copy PDF out of build_dir
+    pdf_name = tex_path.stem + ".pdf"   # e.g. "homework_template.pdf"
+    pdf_built = build_dir / pdf_name
+    pdf_final = tex_path.with_suffix(".pdf")
+
+    shutil.copyfile(pdf_built, pdf_final)
+    pdf_final.touch()
+
+    # Remove build artifacts entirely
+    shutil.rmtree(build_dir, ignore_errors=True)
+
+
+def task_compile_and_clean_latex():
+    """Compile each .tex in a temporary _build directory, copy the PDF to reports/, then remove _build."""
+    for tex_file, cfg in latex_docs.items():
+        base_name = tex_file.replace(".tex", "")
+        tex_path = REPORTS_DIR / tex_file
+        pdf_path = tex_path.with_suffix(".pdf")
+        yield {
+            "name": base_name,
+            "actions": [
+                # We'll just call our helper function above
+                (compile_to_build_and_move_pdf, [tex_path, Path("_build")])
+            ],
+            # The .tex file plus any other dependencies (the R-generated .tex table, etc.):
+            "file_dep": [str(tex_path)] + [str(dep) for dep in cfg.get("deps", [])],
+            "targets": [str(pdf_path)],
+        }
+
+
 ###################################################################
 ## Uncomment the task below if you have Stata installed. See README
 ###################################################################
@@ -650,4 +729,51 @@ def task_compile_sphinx_docs():
 #         "task_dep": ["pull_fred"],
 #         "clean": True,
 #         "verbosity": 2,
+#     }
+
+
+# ====================================================================================
+# LaTeX compilation
+# ====================================================================================
+
+# def task_compile_latex_docs():
+#     """Compile the LaTeX documents to PDFs"""
+#     file_dep = [
+#         "./reports/report_example.tex",
+#         "./reports/my_article_header.sty",
+#         "./reports/slides_example.tex",
+#         "./reports/my_beamer_header.sty",
+#         "./reports/my_common_header.sty",
+#         "./reports/report_simple_example.tex",
+#         "./reports/slides_simple_example.tex",
+#         "./src/example_plot.py",
+#         "./src/example_table.py",
+#     ]
+#     targets = [
+#         "./reports/report_example.pdf",
+#         "./reports/slides_example.pdf",
+#         "./reports/report_simple_example.pdf",
+#         "./reports/slides_simple_example.pdf",
+#     ]
+
+#     return {
+#         "actions": [
+#             # My custom LaTeX templates
+#             "latexmk -xelatex -halt-on-error -cd ./reports/report_example.tex",  # Compile
+#             "latexmk -xelatex -halt-on-error -c -cd ./reports/report_example.tex",  # Clean
+#             "latexmk -xelatex -halt-on-error -cd ./reports/slides_example.tex",  # Compile
+#             "latexmk -xelatex -halt-on-error -c -cd ./reports/slides_example.tex",  # Clean
+#             # Simple templates based on small adjustments to Overleaf templates
+#             "latexmk -xelatex -halt-on-error -cd ./reports/report_simple_example.tex",  # Compile
+#             "latexmk -xelatex -halt-on-error -c -cd ./reports/report_simple_example.tex",  # Clean
+#             "latexmk -xelatex -halt-on-error -cd ./reports/slides_simple_example.tex",  # Compile
+#             "latexmk -xelatex -halt-on-error -c -cd ./reports/slides_simple_example.tex",  # Clean
+#             #
+#             # Example of compiling and cleaning in another directory. This often fails, so I don't use it
+#             # f"latexmk -xelatex -halt-on-error -cd -output-directory=../_output/ ./reports/report_example.tex",  # Compile
+#             # f"latexmk -xelatex -halt-on-error -c -cd -output-directory=../_output/ ./reports/report_example.tex",  # Clean
+#         ],
+#         "targets": targets,
+#         "file_dep": file_dep,
+#         "clean": True,
 #     }
