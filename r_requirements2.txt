@@ -1,0 +1,33 @@
+# Core multivariate tools
+psych
+factoextra
+FactoMineR
+PMA
+fastICA
+CCA
+smacof
+vegan
+MASS
+cluster
+mclust
+ca
+glmnet
+randomForest
+ranger
+mixtools
+
+# Data & modeling frameworks
+tidyverse
+caret
+tidymodels
+data.table
+janitor
+
+# Visualization
+ggplot2
+GGally
+corrplot
+
+# Misc stats
+car
+heplots
