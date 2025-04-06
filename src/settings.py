@@ -50,8 +50,10 @@ def get_os():
     else:
         return "unknown"
     
+# Absolute path to root directory of the project
+BASE_DIR = Path(__file__).absolute().parent.parent
 
-def if_relative_make_abs(path: Path|str, base: Path) -> Path:
+def if_relative_make_abs(path: Path|str, base: Path = BASE_DIR) -> Path:
     """
     If `path` is relative, interpret it as relative to `base`.
     Return an absolute, resolved Path.
@@ -66,10 +68,6 @@ def if_relative_make_abs(path: Path|str, base: Path) -> Path:
 
 OS_TYPE = get_os()
 
-# Absolute path to root directory of the project
-BASE_DIR = Path(__file__).absolute().parent.parent
-
-
 # fmt: off
 ## Other .env variables
 WRDS_USERNAME = _config("WRDS_USERNAME", default="")
@@ -82,7 +80,7 @@ USER = _config("USER", default="")
 DATA_DIR = if_relative_make_abs(_config('DATA_DIR', default=Path('_data'), cast=Path))
 RAW_DATA_DIR = DATA_DIR / "raw"
 PROCESSED_DATA_DIR = DATA_DIR / "processed"
-MANUAL_DATA_DIR = DATA_DIR / "manual"
+MANUAL_DATA_DIR = if_relative_make_abs(_config('DATA_MANUAL_DIR', default=DATA_DIR / "manual", cast=Path))
 LOG_DIR = if_relative_make_abs(_config('LOG_DIR', default=Path('logs'), cast=Path))
 OUTPUT_DIR = if_relative_make_abs(_config('OUTPUT_DIR', default=Path('_output'), cast=Path))
 PUBLISH_DIR = if_relative_make_abs(_config('PUBLISH_DIR', default=Path('docs'), cast=Path))
