@@ -13,7 +13,7 @@
 /reports/*.pdf
 
 # Secrets saved in environment files
-.env*
+.env
 # Allow example environment file
 !.env.example*
 
