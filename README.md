@@ -181,3 +181,21 @@ pip freeze > requirements.txt
 
 Since `conda` has so many performance issues, it's recommended to use `mamba` instead. I recommend installing the `miniforge` distribution. See here: https://github.com/conda-forge/miniforge
 
+
+### LaTeX and PDF Generation
+
+First, make sure you have MikTex installed in your computer.
+
+Then, add it to the PATH variable:
+```
+C:\Users\eduar\AppData\Local\Programs\MiKTeX\miktex\bin\x64
+```
+
+To generate a log report for debugging, navigate to reports with:
+```bash
+cd ./reports
+```
+Then, you can generate a PDF using LaTeX by running the following command:
+```bash
+latexmk -xelatex -pdf -halt-on-error -interaction=nonstopmode -outdir=../_build hw1_solutions.tex
+```

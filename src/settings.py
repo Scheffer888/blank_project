@@ -78,8 +78,8 @@ USER = _config("USER", default="")
 
 ## Paths
 DATA_DIR = if_relative_make_abs(_config('DATA_DIR', default=Path('_data'), cast=Path))
-RAW_DATA_DIR = DATA_DIR / "raw"
-PROCESSED_DATA_DIR = DATA_DIR / "processed"
+RAW_DATA_DIR = if_relative_make_abs(_config('RAW_DATA_DIR', default=DATA_DIR / "raw", cast=Path))
+PROCESSED_DATA_DIR = if_relative_make_abs(_config('PROCESSED_DATA_DIR', default=DATA_DIR / "processed", cast=Path))
 MANUAL_DATA_DIR = if_relative_make_abs(_config('DATA_MANUAL_DIR', default=DATA_DIR / "manual", cast=Path))
 LOG_DIR = if_relative_make_abs(_config('LOG_DIR', default=Path('logs'), cast=Path))
 OUTPUT_DIR = if_relative_make_abs(_config('OUTPUT_DIR', default=Path('_output'), cast=Path))
